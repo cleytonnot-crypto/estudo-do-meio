@@ -424,4 +424,59 @@ def test_obter_rubrica_por_ano():
     assert obter_rubrica_por_ano("") == RUBRICAS["Geral"]
 
 
+def test_rubrica_database_crud(db_session):
+    """Testa o CRUD de rubricas e critérios no banco de dados de teste."""
+    from database import Rubrica, CriterioRubrica
+    
+    # 1. Create a Rubrica
+    nova_r = Rubrica(
+        nome="1ª série - Teste",
+        max_aa=2.0,
+        max_cs=3.0,
+        termos_mapeamento="1ª SÉRIE; 1ª SERIE; 1EM"
+    )
+    db_session.add(nova_r)
+    db_session.commit()
+    
+    # Verify creation
+    r_db = db_session.query(Rubrica).filter(Rubrica.nome == "1ª série - Teste").first()
+    assert r_db is not None
+    assert r_db.max_aa == 2.0
+    assert r_db.max_cs == 3.0
+    assert r_db.termos_mapeamento == "1ª SÉRIE; 1ª SERIE; 1EM"
+    
+    # 2. Add Criteria
+    crit1 = CriterioRubrica(rubrica_id=r_db.id, tipo="AA", descricao="Falta de foco", desconto_padrao=0.5)
+    crit2 = CriterioRubrica(rubrica_id=r_db.id, tipo="CS", descricao="Conversa excessiva", desconto_padrao=0.25)
+    db_session.add_all([crit1, crit2])
+    db_session.commit()
+    
+    # Verify criteria
+    criterios = db_session.query(CriterioRubrica).filter(CriterioRubrica.rubrica_id == r_db.id).all()
+    assert len(criterios) == 2
+    types = [c.tipo for c in criterios]
+    assert "AA" in types
+    assert "CS" in types
+    
+    # 3. Update
+    r_db.max_aa = 1.5
+    crit1.desconto_padrao = 0.4
+    db_session.commit()
+    
+    # Verify update
+    r_db_updated = db_session.query(Rubrica).filter(Rubrica.nome == "1ª série - Teste").first()
+    assert r_db_updated.max_aa == 1.5
+    crit1_db = db_session.query(CriterioRubrica).filter(CriterioRubrica.descricao == "Falta de foco").first()
+    assert crit1_db.desconto_padrao == 0.4
+    
+    # 4. Delete
+    db_session.delete(r_db_updated)
+    db_session.commit()
+    
+    # Verify cascading delete of criteria
+    assert db_session.query(Rubrica).filter(Rubrica.nome == "1ª série - Teste").first() is None
+    assert db_session.query(CriterioRubrica).filter(CriterioRubrica.rubrica_id == r_db.id).first() is None
+
+
+
 

@@ -5,7 +5,7 @@ import os
 import unicodedata
 from datetime import datetime
 from contextlib import contextmanager
-from database import inicializar_banco, SessionLocal, Professor, Aluno, Avaliacao, Feedback
+from database import inicializar_banco, SessionLocal, Professor, Aluno, Avaliacao, Feedback, Rubrica, CriterioRubrica
 from sqlalchemy import func
 
 def normalizar_coluna(col):
@@ -471,90 +471,80 @@ if st.query_params.get("feedback") == "abrir":
                 st.query_params.clear()
                 st.rerun()
 
-# Dicionário de Rubricas por Série / Tipo (Critérios negativos/infrações)
-RUBRICAS = {
-    "3ª série": {
-        "max_aa": 0.4,
-        "max_cs": 1.6,
-        "AA": [
-            ("Apresenta oscilações pontuais de atenção", 0.2),
-            ("Demonstra desinteresse frequente nas explicações/atividades", 0.4),
-        ],
-        "CS": [
-            ("Apresenta pequenas falhas pontuais no cumprimento de regras/orientações", 0.2),
-            ("Descumpre regras ou necessita intervenções frequentes", 0.4),
-            ("Apresenta atrasos ou desorganização ocasionais com horários e pertences", 0.2),
-            ("Compromete o andamento das atividades por atrasos ou desorganização", 0.4),
-            ("Apresenta dificuldades ocasionais de convivência", 0.2),
-            ("Envolve-se em conflitos, provocações ou atitudes desrespeitosas", 0.4),
-            ("Necessita lembretes pontuais sobre postura nos espaços visitados", 0.2),
-            ("Tem atitudes inadequadas em ambientes institucionais ou públicos", 0.4),
-        ]
-    },
-    "2ª série": {
-        "max_aa": 1.0,
-        "max_cs": 1.0,
-        "AA": [
-            ("Falta de atenção ou conversa paralela durante explicações dos monitores/professores", 0.2),
-            ("Falta de empenho ou recusa em realizar anotações e registros solicitados", 0.2),
-            ("Ausência de registros fotográficos de pontos relevantes da visita (quando solicitado)", 0.2),
-            ("Desinteresse geral ou apatia nas atividades e discussões propostas", 0.2),
-            ("Ações dispersivas ou recusa de engajamento com o espaço visitado", 0.2),
-        ],
-        "CS": [
-            ("Falta de respeito ou grosseria com motoristas, guias, professores ou colegas", 0.2),
-            ("Descumpre regras no ônibus (sujeira, levantar-se em movimento, não usar cinto, som alto sem fone)", 0.2),
-            ("Atraso não justificado nos horários de refeição, reuniões ou recolhimento ao quarto", 0.2),
-            ("Uso inadequado, barulho excessivo ou danos nas dependências dos hotéis e visitas", 0.2),
-            ("Uso inadequado do celular em momentos não permitidos", 0.2),
-            ("Quebra de combinados ou desobediência a instruções diretas da equipe", 0.2),
-        ]
-    },
-    "Geral": {
-        "max_aa": 1.0,
-        "max_cs": 1.0,
-        "AA": [
-            ("Falta de atenção ou conversa paralela durante explicações dos monitores/professores", 0.2),
-            ("Falta de empenho ou recusa em realizar anotações e registros solicitados", 0.2),
-            ("Ausência de registros fotográficos de pontos relevantes da visita (quando solicitado)", 0.2),
-            ("Desinteresse geral ou apatia nas atividades e discussões propostas", 0.2),
-            ("Ações dispersivas ou recusa de engajamento com o espaço visitado", 0.2),
-        ],
-        "CS": [
-            ("Falta de respeito ou grosseria com motoristas, guias, professores ou colegas", 0.2),
-            ("Descumpre regras no ônibus (sujeira, levantar-se em movimento, não usar cinto, som alto sem fone)", 0.2),
-            ("Atraso não justificado nos horários de refeição, reuniões ou recolhimento ao quarto", 0.2),
-            ("Uso inadequado, barulho excessivo ou danos nas dependências dos hotéis e visitas", 0.2),
-            ("Uso inadequado do celular em momentos não permitidos", 0.2),
-            ("Quebra de combinados ou desobediência a instruções diretas da equipe", 0.2),
-        ]
+def converter_rubrica_db_para_dict(rubrica_obj):
+    aa_list = []
+    cs_list = []
+    for c in rubrica_obj.criterios:
+        if c.tipo == "AA":
+            aa_list.append((c.descricao, c.desconto_padrao))
+        elif c.tipo == "CS":
+            cs_list.append((c.descricao, c.desconto_padrao))
+    return {
+        "max_aa": rubrica_obj.max_aa,
+        "max_cs": rubrica_obj.max_cs,
+        "AA": aa_list,
+        "CS": cs_list
     }
-}
 
 def obter_rubrica_por_ano(ano_aluno):
-    if not ano_aluno:
-        return RUBRICAS["Geral"]
-    ano_clean = str(ano_aluno).strip().upper()
-    # Mapeamento para 2ª série (Ensino Médio)
-    if any(x in ano_clean for x in ["2ª SÉRIE", "2ª SERIE", "2 SÉRIE", "2 SERIE", "2EM", "2º EM", "2ºEM"]):
-        return RUBRICAS["2ª série"]
-    # Se for 3ª série:
-    if any(x in ano_clean for x in ["3ª SÉRIE", "3ª SERIE", "3 SÉRIE", "3 SERIE", "3EM", "3º EM", "3ºEM", "3 ANO", "3º ANO"]):
-        return RUBRICAS["3ª série"]
-    return RUBRICAS["Geral"]
+    with get_db() as db:
+        # Tenta carregar todas as rubricas
+        try:
+            rubricas_db = db.query(Rubrica).all()
+        except Exception:
+            return {"max_aa": 1.0, "max_cs": 1.0, "AA": [], "CS": []}
+            
+        # Encontra a rubrica "Geral" para usar como fallback
+        rubrica_geral = next((r for r in rubricas_db if r.nome == "Geral"), None)
+        
+        if not ano_aluno:
+            if rubrica_geral:
+                return converter_rubrica_db_para_dict(rubrica_geral)
+            return {"max_aa": 1.0, "max_cs": 1.0, "AA": [], "CS": []}
+            
+        ano_clean = str(ano_aluno).strip().upper()
+        
+        # Percorre as rubricas para ver se o ano_clean casa com termos_mapeamento
+        for r in rubricas_db:
+            if r.nome == "Geral" or not r.termos_mapeamento:
+                continue
+            termos = [t.strip().upper() for t in r.termos_mapeamento.split(";") if t.strip()]
+            if any(t in ano_clean for t in termos):
+                return converter_rubrica_db_para_dict(r)
+                
+        # Fallback
+        if rubrica_geral:
+            return converter_rubrica_db_para_dict(rubrica_geral)
+        return {"max_aa": 1.0, "max_cs": 1.0, "AA": [], "CS": []}
 
-# Unir todos os critérios de todas as rubricas para a filtragem no dashboard
-TODOS_CRITERIOS = []
-for r_name, r_val in RUBRICAS.items():
-    for crit, _ in r_val["AA"]:
-        if crit not in TODOS_CRITERIOS:
-            TODOS_CRITERIOS.append(crit)
-    for crit, _ in r_val["CS"]:
-        if crit not in TODOS_CRITERIOS:
-            TODOS_CRITERIOS.append(crit)
+def obter_todos_criterios():
+    with get_db() as db:
+        try:
+            criterios = db.query(CriterioRubrica.descricao).distinct().all()
+            return [c[0] for c in criterios]
+        except Exception:
+            return []
 
-CRITERIOS_AA = [crit for crit, _ in RUBRICAS["Geral"]["AA"]]
-CRITERIOS_CS = [crit for crit, _ in RUBRICAS["Geral"]["CS"]]
+class RubricasProxy(dict):
+    def __getitem__(self, key):
+        with get_db() as db:
+            r = db.query(Rubrica).filter(Rubrica.nome == key).first()
+            if r:
+                return converter_rubrica_db_para_dict(r)
+            raise KeyError(key)
+            
+    def get(self, key, default=None):
+        try:
+            return self[key]
+        except KeyError:
+            return default
+            
+    def items(self):
+        with get_db() as db:
+            rubricas_db = db.query(Rubrica).all()
+            return [(r.nome, converter_rubrica_db_para_dict(r)) for r in rubricas_db]
+
+RUBRICAS = RubricasProxy()
 
 
 # Helper context manager para sessões do SQLAlchemy
@@ -1021,7 +1011,7 @@ elif selection == '📊 Dashboard':
             with col_criterios:
                 criterios_selecionados = st.multiselect(
                     "Filtro por Critério do Regulamento (AA / CS):",
-                    options=TODOS_CRITERIOS,
+                    options=obter_todos_criterios(),
                     placeholder="Selecione um ou mais critérios..."
                 )
             with col_busca_ra:
@@ -1159,11 +1149,12 @@ elif selection == '⚙️ Administração':
             st.session_state.admin_autenticado = False
             st.rerun()
     
-    admin_tab1, admin_tab2, admin_tab3, admin_tab4, admin_tab5 = st.tabs([
+    admin_tab1, admin_tab2, admin_tab3, admin_tab4, admin_tab5, admin_tab6 = st.tabs([
         "📋 Registros Atuais", 
         "➕ Cadastro Manual", 
         "📤 Importação em Lote (.xlsx)", 
         "💬 Feedbacks e Sugestões",
+        "⚙️ Gerenciar Rubricas",
         "🚨 Limpeza de Dados"
     ])
     
@@ -1630,6 +1621,201 @@ elif selection == '⚙️ Administração':
                                 st.rerun()
                                 
     with admin_tab5:
+        st.subheader("⚙️ Gerenciar Rubricas e Critérios")
+        st.write("Gerencie as rubricas de avaliação e seus respectivos critérios para cada série/ano escolar.")
+
+        with get_db() as db:
+            rubricas_existentes = db.query(Rubrica).all()
+
+        opcoes_rubrica = [r.nome for r in rubricas_existentes] + ["➕ Criar Nova Rubrica"]
+        rubrica_selecionada_nome = st.selectbox("Selecione uma Rubrica para Editar ou criar uma nova:", opcoes_rubrica, key="sel_rubrica_admin")
+
+        if rubrica_selecionada_nome == "➕ Criar Nova Rubrica":
+            st.markdown("#### ➕ Criar Nova Rubrica")
+            with st.form("form_nova_rubrica", clear_on_submit=True):
+                novo_nome = st.text_input("Nome da Rubrica:", placeholder="Ex: 1ª série")
+                novos_termos = st.text_area("Termos de Mapeamento (separados por ponto e vírgula ';'):", placeholder="Ex: 1ª SÉRIE; 1ª SERIE; 1EM; 1ºEM")
+                novo_max_aa = st.number_input("Pontuação Máxima - Atitude frente à aprendizagem (AA):", min_value=0.0, max_value=10.0, value=1.0, step=0.1)
+                novo_max_cs = st.number_input("Pontuação Máxima - Comportamento Social (CS):", min_value=0.0, max_value=10.0, value=1.0, step=0.1)
+                
+                btn_criar = st.form_submit_button("Criar Rubrica", type="primary", use_container_width=True)
+                if btn_criar:
+                    if not novo_nome.strip():
+                        st.error("O nome da rubrica é obrigatório.")
+                    else:
+                        with get_db() as db:
+                            dup = db.query(Rubrica).filter(Rubrica.nome == novo_nome.strip()).first()
+                            if dup:
+                                st.error(f"Já existe uma rubrica com o nome '{novo_nome.strip()}'.")
+                            else:
+                                nova_r = Rubrica(
+                                    nome=novo_nome.strip(),
+                                    termos_mapeamento=novos_termos.strip(),
+                                    max_aa=novo_max_aa,
+                                    max_cs=novo_max_cs
+                                )
+                                db.add(nova_r)
+                                db.commit()
+                                st.success(f"Rubrica '{novo_nome}' criada com sucesso! Agora você pode selecionar ela acima para adicionar critérios.")
+                                import time
+                                time.sleep(1)
+                                st.rerun()
+        else:
+            with get_db() as db:
+                rubrica_obj = db.query(Rubrica).filter(Rubrica.nome == rubrica_selecionada_nome).first()
+
+            if rubrica_obj:
+                col_meta1, col_meta2 = st.columns([2, 1])
+                
+                with col_meta1:
+                    st.markdown("#### 📝 Detalhes da Rubrica")
+                    with st.form(f"form_editar_rubrica_{rubrica_obj.id}"):
+                        edit_nome = st.text_input("Nome da Rubrica:", value=rubrica_obj.nome, disabled=(rubrica_obj.nome == "Geral"))
+                        edit_termos = st.text_area("Termos de Mapeamento (separados por ponto e vírgula ';'):", value=rubrica_obj.termos_mapeamento or "", disabled=(rubrica_obj.nome == "Geral"))
+                        edit_max_aa = st.number_input("Pontuação Máxima - Atitude frente à aprendizagem (AA):", min_value=0.0, max_value=10.0, value=float(rubrica_obj.max_aa), step=0.1)
+                        edit_max_cs = st.number_input("Pontuação Máxima - Comportamento Social (CS):", min_value=0.0, max_value=10.0, value=float(rubrica_obj.max_cs), step=0.1)
+                        
+                        btn_salvar_meta = st.form_submit_button("Salvar Detalhes", type="primary", use_container_width=True)
+                        if btn_salvar_meta:
+                            if not edit_nome.strip():
+                                st.error("O nome da rubrica é obrigatório.")
+                            else:
+                                with get_db() as db:
+                                    r_db = db.query(Rubrica).filter(Rubrica.id == rubrica_obj.id).first()
+                                    if r_db:
+                                        if edit_nome.strip() != rubrica_obj.nome:
+                                            dup = db.query(Rubrica).filter(Rubrica.nome == edit_nome.strip()).first()
+                                            if dup:
+                                                st.error(f"Já existe uma rubrica com o nome '{edit_nome.strip()}'.")
+                                                st.stop()
+                                        
+                                        if r_db.nome != "Geral":
+                                            r_db.nome = edit_nome.strip()
+                                            r_db.termos_mapeamento = edit_termos.strip()
+                                        r_db.max_aa = edit_max_aa
+                                        r_db.max_cs = edit_max_cs
+                                        db.commit()
+                                        st.success("Detalhes da rubrica atualizados!")
+                                        import time
+                                        time.sleep(1)
+                                        st.rerun()
+
+                with col_meta2:
+                    st.markdown("#### 🗑️ Ações")
+                    st.write("Excluir esta rubrica e todos os seus critérios associados.")
+                    if rubrica_obj.nome == "Geral":
+                        st.info("A rubrica 'Geral' é o fallback do sistema e não pode ser excluída.")
+                    else:
+                        btn_excluir_rubrica = st.button("🗑️ Excluir Rubrica", type="secondary", use_container_width=True, key=f"del_rubrica_{rubrica_obj.id}")
+                        if btn_excluir_rubrica:
+                            st.session_state[f"confirm_del_{rubrica_obj.id}"] = True
+                            
+                        if st.session_state.get(f"confirm_del_{rubrica_obj.id}", False):
+                            st.error(f"Tem certeza que deseja excluir a rubrica '{rubrica_obj.nome}'? Isso excluirá permanentemente todos os seus critérios.")
+                            col_conf1, col_conf2 = st.columns(2)
+                            with col_conf1:
+                                if st.button("Sim, Excluir", type="primary", use_container_width=True, key=f"confirm_yes_{rubrica_obj.id}"):
+                                    with get_db() as db:
+                                        r_del = db.query(Rubrica).filter(Rubrica.id == rubrica_obj.id).first()
+                                        if r_del:
+                                            db.delete(r_del)
+                                            db.commit()
+                                        st.success("Rubrica excluída com sucesso!")
+                                        del st.session_state[f"confirm_del_{rubrica_obj.id}"]
+                                        import time
+                                        time.sleep(1)
+                                        st.rerun()
+                            with col_conf2:
+                                if st.button("Cancelar", use_container_width=True, key=f"confirm_no_{rubrica_obj.id}"):
+                                    del st.session_state[f"confirm_del_{rubrica_obj.id}"]
+                                    st.rerun()
+
+                st.markdown("---")
+                st.markdown("#### 📋 Critérios de Infração")
+                st.caption("Dica: Clique duas vezes em uma célula para editá-la. Você também pode adicionar novas linhas abaixo (pressione '+' no editor) ou selecionar linhas e apertar 'Delete' para excluí-las. Depois de alterar, clique em 'Salvar Alterações'.")
+                
+                with get_db() as db:
+                    criterios_db = db.query(CriterioRubrica).filter(CriterioRubrica.rubrica_id == rubrica_obj.id).all()
+                
+                df_criterios = pd.DataFrame([{
+                    "ID": c.id,
+                    "Tipo": c.tipo,
+                    "Descrição/Critério": c.descricao,
+                    "Desconto": c.desconto_padrao
+                } for c in criterios_db]) if criterios_db else pd.DataFrame(columns=["ID", "Tipo", "Descrição/Critério", "Desconto"])
+                
+                edited_df_criterios = st.data_editor(
+                    df_criterios,
+                    use_container_width=True,
+                    hide_index=True,
+                    num_rows="dynamic",
+                    disabled=["ID"],
+                    column_config={
+                        "Tipo": st.column_config.SelectboxColumn(
+                            "Tipo",
+                            options=["AA", "CS"],
+                            required=True
+                        ),
+                        "Desconto": st.column_config.NumberColumn(
+                            "Desconto",
+                            min_value=0.0,
+                            max_value=10.0,
+                            step=0.05,
+                            required=True
+                        )
+                    },
+                    key=f"editor_criterios_{rubrica_obj.id}"
+                )
+                
+                if st.button("Salvar Alterações de Critérios", type="primary", use_container_width=True, key=f"btn_salvar_criterios_{rubrica_obj.id}"):
+                    with get_db() as db_session:
+                        try:
+                            # Update and Add
+                            for idx, row in edited_df_criterios.iterrows():
+                                id_val = row["ID"]
+                                tipo_val = str(row["Tipo"]).strip() if pd.notna(row["Tipo"]) else ""
+                                desc_val = str(row["Descrição/Critério"]).strip() if pd.notna(row["Descrição/Critério"]) else ""
+                                desc_val = desc_val.replace('"', '').replace("'", "")
+                                desc_padrao_val = float(row["Desconto"]) if pd.notna(row["Desconto"]) else 0.2
+                                
+                                if not tipo_val or not desc_val:
+                                    continue
+                                
+                                if pd.isna(id_val) or id_val == "":
+                                    novo_criterio = CriterioRubrica(
+                                        rubrica_id=rubrica_obj.id,
+                                        tipo=tipo_val,
+                                        descricao=desc_val,
+                                        desconto_padrao=desc_padrao_val
+                                    )
+                                    db_session.add(novo_criterio)
+                                else:
+                                    criterio = db_session.query(CriterioRubrica).filter(CriterioRubrica.id == int(id_val)).first()
+                                    if criterio:
+                                        criterio.tipo = tipo_val
+                                        criterio.descricao = desc_val
+                                        criterio.desconto_padrao = desc_padrao_val
+                                        
+                            # Delete
+                            existing_ids = [c.id for c in criterios_db]
+                            edited_ids = edited_df_criterios["ID"].dropna().astype(int).tolist()
+                            deleted_ids = [cid for cid in existing_ids if cid not in edited_ids]
+                            
+                            for del_id in deleted_ids:
+                                crit_del = db_session.query(CriterioRubrica).filter(CriterioRubrica.id == del_id).first()
+                                if crit_del:
+                                    db_session.delete(crit_del)
+                                    
+                            db_session.commit()
+                            st.success("✅ Critérios atualizados com sucesso!")
+                            import time
+                            time.sleep(1)
+                            st.rerun()
+                        except Exception as e:
+                            db_session.rollback()
+                            st.error(f"Erro ao salvar critérios: {e}")
+
+    with admin_tab6:
         st.subheader("🚨 Perigo: Limpeza do Banco de Dados")
         st.warning("Essas ações são permanentes e não podem ser desfeitas. Use com cautela durante testes.")
         
@@ -1643,6 +1829,8 @@ elif selection == '⚙️ Administração':
                         db.query(Avaliacao).delete()
                         db.commit()
                         st.success("Histórico de ocorrências apagado!")
+                        import time
+                        time.sleep(1)
                         st.rerun()
                     except Exception as e:
                         db.rollback()
@@ -1658,6 +1846,8 @@ elif selection == '⚙️ Administração':
                         db.query(Aluno).delete()
                         db.commit()
                         st.success("Todos os alunos e histórico apagados!")
+                        import time
+                        time.sleep(1)
                         st.rerun()
                     except Exception as e:
                         db.rollback()
@@ -1673,6 +1863,8 @@ elif selection == '⚙️ Administração':
                         db.query(Professor).delete()
                         db.commit()
                         st.success("Todos os professores e histórico apagados!")
+                        import time
+                        time.sleep(1)
                         st.rerun()
                     except Exception as e:
                         db.rollback()
@@ -1687,6 +1879,8 @@ elif selection == '⚙️ Administração':
                         db.query(Feedback).delete()
                         db.commit()
                         st.success("Todos os feedbacks apagados!")
+                        import time
+                        time.sleep(1)
                         st.rerun()
                     except Exception as e:
                         db.rollback()
