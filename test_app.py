@@ -135,14 +135,22 @@ def test_case_insensitive_aluno_email(db_session):
 
 def test_limpar_valor_excel_helper():
     """Testa a função de limpeza de valores do Excel."""
-    from app import limpar_valor_excel, limpar_email
+    from app import limpar_valor_excel, limpar_email, limpar_nome
     
     assert limpar_valor_excel("12345.0") == "12345"
     assert limpar_valor_excel("12345") == "12345"
     assert limpar_valor_excel("Ônibus 1.0") == "Ônibus 1.0"
     assert limpar_valor_excel(None) is None
+    assert limpar_valor_excel("None") is None
+    assert limpar_valor_excel("nan") is None
+    assert limpar_valor_excel("n/a") is None
     
     assert limpar_email("  TESTE@Escola.com.br  ") == "teste@escola.com.br"
+    assert limpar_email("None") is None
+    assert limpar_email("n/a") is None
+    
+    assert limpar_nome("None") == ""
+    assert limpar_nome("  Fulano  ") == "Fulano"
 
 
 def test_processar_excel_alunos_duplicados(db_session):

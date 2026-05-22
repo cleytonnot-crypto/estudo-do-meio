@@ -26,6 +26,8 @@ def limpar_valor_excel(val):
     if pd.isna(val):
         return None
     val_str = str(val).strip()
+    if val_str.lower() in ['none', 'nan', 'null', 'n/a', '']:
+        return None
     if val_str.endswith('.0'):
         part_before = val_str[:-2]
         if part_before.isdigit() or (part_before.startswith('-') and part_before[1:].isdigit()):
@@ -35,12 +37,18 @@ def limpar_valor_excel(val):
 def limpar_email(val):
     if pd.isna(val):
         return None
-    return str(val).strip().lower()
+    val_str = str(val).strip().lower()
+    if val_str in ['none', 'nan', 'null', 'n/a', '']:
+        return None
+    return val_str
 
 def limpar_nome(val):
     if pd.isna(val):
         return ""
-    return str(val).strip()
+    val_str = str(val).strip()
+    if val_str.lower() in ['none', 'nan', 'null', 'n/a', '']:
+        return ""
+    return val_str
 
 def processar_excel_professores(df, db):
     df.columns = [normalizar_coluna(col) for col in df.columns]
@@ -959,17 +967,23 @@ elif selection == '⚙️ Administração':
             
             uploaded_p_file = st.file_uploader("Upload da Lista de Professores", type=['xlsx'], key='up_prof_p')
             if uploaded_p_file:
-                try:
-                    df = pd.read_excel(uploaded_p_file)
-                    with get_db() as db:
-                        count, duplicates_skipped = processar_excel_professores(df, db)
+                file_key = f"processed_prof_{uploaded_p_file.name}_{uploaded_p_file.size}"
+                if file_key not in st.session_state:
+                    try:
+                        df = pd.read_excel(uploaded_p_file)
+                        with get_db() as db:
+                            count, duplicates_skipped = processar_excel_professores(df, db)
+                        st.session_state[file_key] = (count, duplicates_skipped)
+                        st.rerun()
+                    except Exception as e:
+                        st.error(f"Erro ao processar: {e}")
+                
+                if file_key in st.session_state:
+                    count, duplicates_skipped = st.session_state[file_key]
                     if duplicates_skipped > 0:
                         st.success(f"✅ {count} novos professores cadastrados com sucesso! ({duplicates_skipped} registros duplicados foram ignorados)")
                     else:
                         st.success(f"✅ {count} novos professores cadastrados!")
-                    st.rerun()
-                except Exception as e:
-                    st.error(f"Erro ao processar: {e}")
                     
         with col_import_a:
             st.markdown("#### 🎓 Importação de Alunos")
@@ -984,17 +998,23 @@ elif selection == '⚙️ Administração':
             
             uploaded_a_file = st.file_uploader("Upload da Lista de Alunos", type=['xlsx'], key='up_aluno_a')
             if uploaded_a_file:
-                try:
-                    df = pd.read_excel(uploaded_a_file)
-                    with get_db() as db:
-                        count, duplicates_skipped = processar_excel_alunos(df, db)
+                file_key = f"processed_aluno_{uploaded_a_file.name}_{uploaded_a_file.size}"
+                if file_key not in st.session_state:
+                    try:
+                        df = pd.read_excel(uploaded_a_file)
+                        with get_db() as db:
+                            count, duplicates_skipped = processar_excel_alunos(df, db)
+                        st.session_state[file_key] = (count, duplicates_skipped)
+                        st.rerun()
+                    except Exception as e:
+                        st.error(f"Erro ao processar: {e}")
+                
+                if file_key in st.session_state:
+                    count, duplicates_skipped = st.session_state[file_key]
                     if duplicates_skipped > 0:
                         st.success(f"✅ {count} novos alunos cadastrados com sucesso! ({duplicates_skipped} registros duplicados ou inválidos foram ignorados)")
                     else:
                         st.success(f"✅ {count} novos alunos cadastrados!")
-                    st.rerun()
-                except Exception as e:
-                    st.error(f"Erro ao processar: {e}")
                     
     with admin_tab4:
         st.subheader("💬 Feedbacks, Erros e Sugestões Reportados")
