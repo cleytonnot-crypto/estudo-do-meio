@@ -217,52 +217,59 @@ st.markdown("""
         border-radius: 12px !important;
     }
 
-    /* "Acesso Rápido" Container via stHorizontalBlock (Impossível de falhar) */
-    div[data-testid="stHorizontalBlock"]:first-of-type {
+    /* Containers do Dashboard brancos para destacar do fundo cinza geral */
+    div[data-testid="stVerticalBlockBorderWrapper"] {
+        background-color: #ffffff !important;
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05) !important;
+        border: 1px solid #e2e8f0 !important;
+        border-radius: 12px !important;
+    }
+
+    /* "Acesso Rápido" Container via Exact DOM Selector (nth-child 3) */
+    div.stApp div[data-testid="block-container"] div[data-testid="stVerticalBlock"] > div.element-container:nth-child(3) div[data-testid="stHorizontalBlock"] {
         background-color: #1e2128 !important;
-        padding: 30px !important;
+        padding: 25px !important;
         border-radius: 16px !important;
-        flex-wrap: wrap !important;
         margin-bottom: 25px !important;
         box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1) !important;
     }
     
-    div[data-testid="stHorizontalBlock"]:first-of-type::before {
-        content: "⚡ Acesso Rápido";
-        width: 100%;
-        color: #ffffff;
-        font-family: 'Outfit', sans-serif;
-        font-size: 1.3rem;
-        font-weight: 600;
-        margin-bottom: 15px;
-        display: block;
+    div.stApp div[data-testid="block-container"] div[data-testid="stVerticalBlock"] > div.element-container:nth-child(3) div[data-testid="stHorizontalBlock"]::before {
+        content: "⚡ Acesso Rápido" !important;
+        width: 100% !important;
+        color: #ffffff !important;
+        font-family: 'Outfit', sans-serif !important;
+        font-size: 1.25rem !important;
+        font-weight: 600 !important;
+        margin-bottom: 12px !important;
+        display: block !important;
     }
     
     /* Botões dentro do "Acesso Rápido" */
-    div[data-testid="stHorizontalBlock"]:first-of-type button[kind="primary"] {
+    div.stApp div[data-testid="block-container"] div[data-testid="stVerticalBlock"] > div.element-container:nth-child(3) button[kind="primary"] {
         background-color: #ffc107 !important;
         color: #1e2128 !important;
         border: none !important;
         border-radius: 12px !important;
-        height: 80px !important;
+        height: 50px !important;
         font-weight: 700 !important;
-        font-size: 1.1rem !important;
+        font-size: 1.05rem !important;
         box-shadow: 0 4px 6px rgba(0,0,0,0.1) !important;
     }
     
-    div[data-testid="stHorizontalBlock"]:first-of-type button[kind="secondary"] {
+    div.stApp div[data-testid="block-container"] div[data-testid="stVerticalBlock"] > div.element-container:nth-child(3) button[kind="secondary"] {
         background-color: #2c303a !important;
         color: #f8fafc !important;
         border: 1px solid #3f4451 !important;
         border-radius: 12px !important;
-        height: 80px !important;
+        height: 50px !important;
         font-weight: 500 !important;
         font-size: 1.05rem !important;
         box-shadow: 0 4px 6px rgba(0,0,0,0.05) !important;
         transition: all 0.2s ease-in-out;
     }
     
-    div[data-testid="stHorizontalBlock"]:first-of-type button[kind="secondary"]:hover {
+    div.stApp div[data-testid="block-container"] div[data-testid="stVerticalBlock"] > div.element-container:nth-child(3) button[kind="secondary"]:hover {
         background-color: #3f4451 !important;
         border-color: #4b5563 !important;
         color: #ffffff !important;
