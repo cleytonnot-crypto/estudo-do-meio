@@ -713,6 +713,7 @@ if selection == '📝 Registrar Ocorrência':
                 
                 with get_db() as db:
                     aluno_obj = db.query(Aluno).filter(Aluno.id == aluno_id).first()
+                    num_ocorrencias = db.query(Avaliacao).filter(Avaliacao.aluno_id == aluno_id).count()
                     
                 # Obter a rubrica dinamicamente baseada no ano/série do aluno
                 rubrica_aluno = obter_rubrica_por_ano(aluno_obj.ano)
@@ -725,6 +726,9 @@ if selection == '📝 Registrar Ocorrência':
                     </p>
                 </div>
                 """, unsafe_allow_html=True)
+                
+                if num_ocorrencias > 0:
+                    st.warning(f"⚠️ **Aviso de Reincidência:** Este aluno já possui **{num_ocorrencias}** ocorrência(s) registrada(s). O novo registro irá acumular novos descontos na nota final.")
                 
                 st.markdown("<br>", unsafe_allow_html=True)
                 
