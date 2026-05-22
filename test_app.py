@@ -114,3 +114,34 @@ def test_criar_feedback(db_session):
     assert fb_db.descricao == "O gráfico de ocorrências por ônibus está quebrando quando não há dados."
     assert fb_db.resolvido == 0
 
+def test_case_insensitive_aluno_email(db_session):
+    """Testa se a restrição de email do aluno é case-insensitive no fluxo do app."""
+    from sqlalchemy import func
+    from database import Aluno
+    
+    # Adiciona primeiro aluno
+    aluno1 = Aluno(nome="Aluno A", ra="123", email="teste@escola.com.br")
+    db_session.add(aluno1)
+    db_session.commit()
+    
+    # Tenta verificar se existe duplicado de forma case-insensitive
+    email_novo = "TESTE@ESCOLA.COM.BR"
+    duplicate = db_session.query(Aluno).filter(
+        func.lower(Aluno.email) == email_novo.lower()
+    ).first()
+    
+    assert duplicate is not None
+    assert duplicate.nome == "Aluno A"
+
+def test_limpar_valor_excel_helper():
+    """Testa a função de limpeza de valores do Excel."""
+    from app import limpar_valor_excel, limpar_email
+    
+    assert limpar_valor_excel("12345.0") == "12345"
+    assert limpar_valor_excel("12345") == "12345"
+    assert limpar_valor_excel("Ônibus 1.0") == "Ônibus 1.0"
+    assert limpar_valor_excel(None) is None
+    
+    assert limpar_email("  TESTE@Escola.com.br  ") == "teste@escola.com.br"
+
+

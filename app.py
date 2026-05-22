@@ -4,6 +4,27 @@ import io
 from datetime import datetime
 from contextlib import contextmanager
 from database import inicializar_banco, SessionLocal, Professor, Aluno, Avaliacao, Feedback
+from sqlalchemy import func
+
+def limpar_valor_excel(val):
+    if pd.isna(val):
+        return None
+    val_str = str(val).strip()
+    if val_str.endswith('.0'):
+        part_before = val_str[:-2]
+        if part_before.isdigit() or (part_before.startswith('-') and part_before[1:].isdigit()):
+            return part_before
+    return val_str
+
+def limpar_email(val):
+    if pd.isna(val):
+        return None
+    return str(val).strip().lower()
+
+def limpar_nome(val):
+    if pd.isna(val):
+        return ""
+    return str(val).strip()
 
 # Inicializa o banco de dados
 inicializar_banco()
@@ -692,14 +713,17 @@ elif selection == '⚙️ Administração':
                     else:
                         with get_db() as db:
                             try:
-                                # Verifica duplicado
-                                duplicate = db.query(Professor).filter(Professor.email == p_email.strip()).first()
+                                # Verifica duplicado de forma case-insensitive e com strip
+                                p_email_clean = p_email.strip().lower()
+                                duplicate = db.query(Professor).filter(
+                                    func.lower(Professor.email) == p_email_clean
+                                ).first()
                                 if duplicate:
                                     st.error("Professor com este e-mail já está cadastrado.")
                                 else:
                                     novo_p = Professor(
                                         nome=p_nome.strip(),
-                                        email=p_email.strip(),
+                                        email=p_email_clean,
                                         viagem=p_viagem.strip() if p_viagem.strip() else None,
                                         onibus=p_onibus.strip() if p_onibus.strip() else None
                                     )
@@ -728,17 +752,20 @@ elif selection == '⚙️ Administração':
                     else:
                         with get_db() as db:
                             try:
-                                # Verifica duplicado
+                                # Verifica duplicado de forma case-insensitive e com strip
+                                a_ra_clean = a_ra.strip()
+                                a_email_clean = a_email.strip().lower()
                                 duplicate = db.query(Aluno).filter(
-                                    (Aluno.ra == a_ra.strip()) | (Aluno.email == a_email.strip())
+                                    (func.lower(Aluno.ra) == a_ra_clean.lower()) | 
+                                    (func.lower(Aluno.email) == a_email_clean)
                                 ).first()
                                 if duplicate:
                                     st.error("Aluno com este RA ou e-mail já está cadastrado.")
                                 else:
                                     novo_a = Aluno(
                                         nome=a_nome.strip(),
-                                        ra=a_ra.strip(),
-                                        email=a_email.strip(),
+                                        ra=a_ra_clean,
+                                        email=a_email_clean,
                                         ano=a_ano.strip() if a_ano.strip() else None,
                                         viagem_destino=a_viagem.strip() if a_viagem.strip() else None,
                                         onibus=a_onibus.strip() if a_onibus.strip() else None
@@ -776,17 +803,25 @@ elif selection == '⚙️ Administração':
                     if all(col in df.columns for col in expected):
                         count = 0
                         with get_db() as db:
-                            # Carrega emails cadastrados para evitar duplicados locais/banco
-                            existing_emails = set(p[0] for p in db.query(Professor.email).all() if p[0])
+                            # Carrega emails cadastrados para evitar duplicados locais/banco (case-insensitive)
+                            existing_emails = set(str(p[0]).strip().lower() for p in db.query(Professor.email).all() if p[0])
                             
                             for _, r in df.iterrows():
-                                email_val = str(r['email']).strip()
+                                if pd.isna(r['nome']) or pd.isna(r['email']):
+                                    continue
+                                
+                                nome_val = limpar_nome(r['nome'])
+                                email_val = limpar_email(r['email'])
+                                
+                                if not nome_val or not email_val:
+                                    continue
+                                    
                                 if email_val not in existing_emails:
-                                    on_val = str(r['onibus']).strip() if 'onibus' in df.columns and pd.notna(r['onibus']) else None
+                                    on_val = limpar_valor_excel(r['onibus']) if 'onibus' in df.columns else None
                                     novo_prof = Professor(
-                                        nome=str(r['nome']).strip(),
+                                        nome=nome_val,
                                         email=email_val,
-                                        viagem=str(r['viagem']).strip() if pd.notna(r['viagem']) else None,
+                                        viagem=limpar_valor_excel(r['viagem']),
                                         onibus=on_val
                                     )
                                     db.add(novo_prof)
@@ -819,25 +854,34 @@ elif selection == '⚙️ Administração':
                     if all(col in df.columns for col in expected):
                         count = 0
                         with get_db() as db:
-                            # Carrega RAs e emails cadastrados para evitar duplicados locais/banco
-                            existing_ras = set(a[0] for a in db.query(Aluno.ra).all() if a[0])
-                            existing_emails = set(a[0] for a in db.query(Aluno.email).all() if a[0])
+                            # Carrega RAs e emails cadastrados para evitar duplicados locais/banco (case-insensitive)
+                            existing_ras = set(str(a[0]).strip().lower() for a in db.query(Aluno.ra).all() if a[0])
+                            existing_emails = set(str(a[0]).strip().lower() for a in db.query(Aluno.email).all() if a[0])
                             
                             for _, r in df.iterrows():
-                                ra_val = str(r['ra']).strip()
-                                email_val = str(r['email']).strip()
-                                if ra_val not in existing_ras and email_val not in existing_emails:
-                                    on_val = str(r['onibus']).strip() if 'onibus' in df.columns and pd.notna(r['onibus']) else None
+                                if pd.isna(r['nome']) or pd.isna(r['ra']) or pd.isna(r['email']):
+                                    continue
+                                
+                                nome_val = limpar_nome(r['nome'])
+                                ra_val = limpar_valor_excel(r['ra'])
+                                email_val = limpar_email(r['email'])
+                                
+                                if not nome_val or not ra_val or not email_val:
+                                    continue
+                                    
+                                # Verifica duplicidade de RA e E-mail de forma case-insensitive
+                                if ra_val.lower() not in existing_ras and email_val not in existing_emails:
+                                    on_val = limpar_valor_excel(r['onibus']) if 'onibus' in df.columns else None
                                     novo_aluno = Aluno(
-                                        nome=str(r['nome']).strip(),
+                                        nome=nome_val,
                                         ra=ra_val,
                                         email=email_val,
-                                        ano=str(r['ano']).strip() if pd.notna(r['ano']) else None,
-                                        viagem_destino=str(r['viagem_destino']).strip() if pd.notna(r['viagem_destino']) else None,
+                                        ano=limpar_valor_excel(r['ano']),
+                                        viagem_destino=limpar_valor_excel(r['viagem_destino']),
                                         onibus=on_val
                                     )
                                     db.add(novo_aluno)
-                                    existing_ras.add(ra_val)
+                                    existing_ras.add(ra_val.lower())
                                     existing_emails.add(email_val)
                                     count += 1
                             db.commit()
@@ -992,3 +1036,8 @@ elif selection == '⚙️ Administração':
 # Rodapé lateral
 st.sidebar.markdown("---")
 st.sidebar.caption("Desenvolvido por cleytonnot-crypto & Antigravity v1.0")
+st.sidebar.caption(
+    "A concepção pedagógica, critérios de avaliação e autoria intelectual do sistema são de cleytonnot-crypto. "
+    "A implementação técnica e o refinamento de sintaxe deste sistema contaram com o auxílio de ferramentas de "
+    "Inteligência Artificial, seguindo os termos de serviço dos respectivos provedores."
+)
