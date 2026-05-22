@@ -649,26 +649,53 @@ if selection == '📝 Registrar Ocorrência':
         st.warning("⚠️ Nenhum aluno cadastrado no sistema. Acesse a seção 'Administração' para importar ou cadastrar alunos.")
     else:
         with st.container(border=True):
-            st.markdown("### 1. Quem está registrando?")
-            prof_dict = {f"{p.nome} (Destino: {p.viagem or 'Qualquer'} | {p.onibus or 'Sem Ônibus'})": p.id for p in professores}
-            prof_selecionado = st.selectbox(
-                "Selecione o Professor/Monitor:", 
-                options=list(prof_dict.keys()),
-                index=None,
-                placeholder="🔍 Digite para buscar..."
-            )
-            
-            if not prof_selecionado:
-                st.info("👆 Por favor, busque e selecione o seu nome acima para continuar.")
+            if "professor_logado_id" not in st.session_state:
+                st.session_state.professor_logado_id = None
+                
+            if st.session_state.professor_logado_id is None:
+                st.markdown("### 1. Acesso do Professor")
+                st.info("Para registrar ocorrências, faça login com o seu e-mail cadastrado.")
+                
+                with st.form("form_login_prof"):
+                    email_digitado = st.text_input("E-mail Institucional:", placeholder="exemplo@escola.com.br")
+                    submetido = st.form_submit_button("Entrar", use_container_width=True)
+                    
+                    if submetido:
+                        if not email_digitado.strip():
+                            st.error("Por favor, digite seu e-mail.")
+                        else:
+                            with get_db() as db:
+                                prof = db.query(Professor).filter(func.lower(Professor.email) == func.lower(email_digitado.strip())).first()
+                                if prof:
+                                    st.session_state.professor_logado_id = prof.id
+                                    st.success(f"Bem-vindo(a), {prof.nome}!")
+                                    st.rerun()
+                                else:
+                                    st.error("E-mail não encontrado no sistema. Verifique a digitação ou contate a administração.")
+                
                 import sys
                 if 'pytest' not in sys.modules:
                     st.stop()
-                professor_id = list(prof_dict.values())[0] if prof_dict else None
+                professor_id = professores[0].id if professores else None
             else:
-                professor_id = prof_dict[prof_selecionado]
+                professor_id = st.session_state.professor_logado_id
             
             with get_db() as db:
                 prof_obj = db.query(Professor).filter(Professor.id == professor_id).first()
+                if prof_obj is None:
+                    st.session_state.professor_logado_id = None
+                    st.rerun()
+                    
+                if st.session_state.professor_logado_id is not None:
+                    col_t, col_btn = st.columns([4, 1])
+                    with col_t:
+                        st.markdown(f"### 👤 Olá, {prof_obj.nome}")
+                        st.caption(f"**Destino:** {prof_obj.viagem or 'Qualquer um'} | **Ônibus:** {prof_obj.onibus or 'Todos'}")
+                    with col_btn:
+                        if st.button("Sair", use_container_width=True):
+                            st.session_state.professor_logado_id = None
+                            st.rerun()
+
                 prof_viagem = prof_obj.viagem
                 prof_onibus = prof_obj.onibus
                 

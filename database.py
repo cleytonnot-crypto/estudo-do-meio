@@ -2,7 +2,7 @@ import os
 from sqlalchemy import create_engine, Column, Integer, String, ForeignKey, DateTime, Text, text, Float
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker, relationship
-from datetime import datetime
+from datetime import datetime, timezone, timedelta
 
 # Configuração do Engine e Base
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -11,6 +11,11 @@ DB_URL = f"sqlite:///{db_path}"
 engine = create_engine(DB_URL, connect_args={"check_same_thread": False})
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 Base = declarative_base()
+
+def agora_br():
+    """Retorna a data e hora atual no fuso de Brasília (UTC-3) sem tzinfo para o SQLite."""
+    fuso_br = timezone(timedelta(hours=-3))
+    return datetime.now(fuso_br).replace(tzinfo=None)
 
 class Professor(Base):
     __tablename__ = "professores"
@@ -38,7 +43,7 @@ class Avaliacao(Base):
     id = Column(Integer, primary_key=True, index=True)
     professor_id = Column(Integer, ForeignKey("professores.id"), nullable=False)
     aluno_id = Column(Integer, ForeignKey("alunos.id"), nullable=False)
-    data_hora = Column(DateTime, default=datetime.now)
+    data_hora = Column(DateTime, default=agora_br)
     atitude_aa = Column(String(255)) # Critérios selecionados
     comportamento_cs = Column(String(255)) # Critérios selecionados
     desconto_aa = Column(Float, default=0.0) # Pontos perdidos em AA
@@ -57,7 +62,7 @@ class Feedback(Base):
     tipo = Column(String(50), nullable=False)  # Erro / Bug, Sugestão, Dúvida, Outro
     secao = Column(String(50), nullable=False)  # Geral, Registrar Ocorrência, Dashboard, Administração
     descricao = Column(Text, nullable=False)
-    data_hora = Column(DateTime, default=datetime.now)
+    data_hora = Column(DateTime, default=agora_br)
     resolvido = Column(Integer, default=0)  # 0 = Pendente, 1 = Resolvido
 
 class Configuracao(Base):
