@@ -1,6 +1,7 @@
 import streamlit as st
 import pandas as pd
 import io
+import os
 from datetime import datetime
 from contextlib import contextmanager
 from database import inicializar_banco, SessionLocal, Professor, Aluno, Avaliacao, Feedback
@@ -731,7 +732,40 @@ elif selection == '📊 Dashboard da Coordenação':
 
 elif selection == '⚙️ Administração':
     st.title("⚙️ Painel de Administração")
-    st.write("Gerencie os cadastros do sistema de forma unitária ou em lote (via arquivo do Excel).")
+    
+    senha_correta = os.environ.get("ADMIN_PASSWORD", "admin123")
+    
+    if "admin_autenticado" not in st.session_state:
+        st.session_state.admin_autenticado = False
+        
+    if not st.session_state.admin_autenticado:
+        st.write("Esta é uma área restrita. Por favor, insira a senha de administrador para continuar.")
+        
+        # Centralizando o formulário para um visual mais limpo e premium
+        col_login_1, col_login_2, col_login_3 = st.columns([1, 2, 1])
+        with col_login_2:
+            with st.form("form_login_admin"):
+                st.markdown("### 🔐 Autenticação Requerida")
+                senha_digitada = st.text_input("Senha de Acesso:", type="password", placeholder="Digite a senha...")
+                submetido = st.form_submit_button("Entrar", use_container_width=True)
+                
+                if submetido:
+                    if senha_digitada == senha_correta:
+                        st.session_state.admin_autenticado = True
+                        st.success("Senha correta! Acesso liberado.")
+                        st.rerun()
+                    else:
+                        st.error("Senha incorreta. Tente novamente.")
+        st.stop()
+        
+    # Se autenticado, exibe a descrição e um botão para desconectar ao lado
+    col_header_title, col_header_logout = st.columns([3, 1])
+    with col_header_title:
+        st.write("Gerencie os cadastros do sistema de forma unitária ou em lote (via arquivo do Excel).")
+    with col_header_logout:
+        if st.button("🔒 Sair do Painel", use_container_width=True):
+            st.session_state.admin_autenticado = False
+            st.rerun()
     
     admin_tab1, admin_tab2, admin_tab3, admin_tab4, admin_tab5 = st.tabs([
         "📋 Registros Atuais", 
