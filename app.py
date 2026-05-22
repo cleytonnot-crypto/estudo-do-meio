@@ -187,125 +187,172 @@ st.markdown("""
         font-family: 'Outfit', sans-serif;
     }
     
-    /* Reduzir paddings extremos para Mobile */
+    div[data-testid="stAppViewContainer"] {
+        background-color: #f8fafc !important;
+    }
+    
+    /* Reduzir paddings extremos para Mobile e centralizar layout */
     .block-container {
-        padding-top: 2rem !important;
-        padding-bottom: 2rem !important;
-        padding-left: 1rem !important;
-        padding-right: 1rem !important;
-        max-width: 100% !important;
+        padding-top: 2.5rem !important;
+        padding-bottom: 2.5rem !important;
+        padding-left: 1.5rem !important;
+        padding-right: 1.5rem !important;
+        max-width: 1200px !important;
+        margin: 0 auto !important;
     }
     
     h1 {
-        color: #0f172a;
+        color: #1e293b;
         font-family: 'Outfit', sans-serif;
         font-weight: 700;
         margin-bottom: 1.5rem;
+        font-size: 2.25rem !important;
+        letter-spacing: -0.02em;
     }
     
     h2, h3, h4, h5 {
-        color: #6366f1;
+        color: #4f46e5;
         font-family: 'Outfit', sans-serif;
         font-weight: 600;
+        letter-spacing: -0.01em;
     }
     
-    /* Containers do Dashboard brancos para destacar do fundo cinza geral */
+    /* Containers brancos premium para destacar do fundo cinza geral */
     div[data-testid="stVerticalBlockBorderWrapper"] {
         background-color: #ffffff !important;
-        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05) !important;
-        border: 1px solid #e2e8f0 !important;
-        border-radius: 12px !important;
-    }
-
-    /* Containers do Dashboard brancos para destacar do fundo cinza geral */
-    div[data-testid="stVerticalBlockBorderWrapper"] {
-        background-color: #ffffff !important;
-        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05) !important;
-        border: 1px solid #e2e8f0 !important;
-        border-radius: 12px !important;
-    }
-
-    /* "Acesso Rápido" Container via Exact DOM Selector (nth-child 3) */
-    div.stApp div[data-testid="block-container"] div[data-testid="stVerticalBlock"] > div.element-container:nth-child(3) div[data-testid="stHorizontalBlock"] {
-        background-color: #1e2128 !important;
-        padding: 25px !important;
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.02), 0 2px 4px -1px rgba(0, 0, 0, 0.01) !important;
+        border: 1px solid #f1f5f9 !important;
         border-radius: 16px !important;
-        margin-bottom: 25px !important;
-        box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1) !important;
+        padding: 24px !important;
+        margin-bottom: 20px !important;
+        transition: all 0.25s ease-in-out !important;
     }
     
-    div.stApp div[data-testid="block-container"] div[data-testid="stVerticalBlock"] > div.element-container:nth-child(3) div[data-testid="stHorizontalBlock"]::before {
-        content: "⚡ Acesso Rápido" !important;
-        width: 100% !important;
+    div[data-testid="stVerticalBlockBorderWrapper"]:hover {
+        box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.04), 0 4px 6px -2px rgba(0, 0, 0, 0.01) !important;
+    }
+    
+    /* Formulários estilizados como cartões brancos */
+    div[data-testid="stForm"] {
+        background-color: #ffffff !important;
+        border: 1px solid #f1f5f9 !important;
+        border-radius: 16px !important;
+        padding: 28px !important;
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.02) !important;
+        margin-bottom: 20px !important;
+    }
+    
+    /* Estilo geral para botões primários */
+    button[kind="primary"] {
+        background: linear-gradient(135deg, #4f46e5 0%, #3730a3 100%) !important;
         color: #ffffff !important;
-        font-family: 'Outfit', sans-serif !important;
-        font-size: 1.25rem !important;
-        font-weight: 600 !important;
-        margin-bottom: 12px !important;
-        display: block !important;
-    }
-    
-    /* Botões dentro do "Acesso Rápido" */
-    div.stApp div[data-testid="block-container"] div[data-testid="stVerticalBlock"] > div.element-container:nth-child(3) button[kind="primary"] {
-        background-color: #ffc107 !important;
-        color: #1e2128 !important;
         border: none !important;
-        border-radius: 12px !important;
-        height: 50px !important;
-        font-weight: 700 !important;
-        font-size: 1.05rem !important;
-        box-shadow: 0 4px 6px rgba(0,0,0,0.1) !important;
+        border-radius: 10px !important;
+        padding: 0.55rem 1.2rem !important;
+        font-weight: 600 !important;
+        font-size: 0.95rem !important;
+        transition: all 0.2s ease-in-out !important;
+        box-shadow: 0 4px 10px rgba(79, 70, 229, 0.18) !important;
+        height: auto !important;
+    }
+    button[kind="primary"]:hover {
+        transform: translateY(-1px) !important;
+        box-shadow: 0 10px 15px -3px rgba(79, 70, 229, 0.28) !important;
+        background: linear-gradient(135deg, #5a52ff 0%, #4338ca 100%) !important;
+    }
+    button[kind="primary"]:active {
+        transform: translateY(1px) !important;
     }
     
-    div.stApp div[data-testid="block-container"] div[data-testid="stVerticalBlock"] > div.element-container:nth-child(3) button[kind="secondary"] {
-        background-color: #2c303a !important;
-        color: #f8fafc !important;
-        border: 1px solid #3f4451 !important;
-        border-radius: 12px !important;
-        height: 50px !important;
+    /* Estilo geral para botões secundários */
+    button[kind="secondary"] {
+        background-color: #ffffff !important;
+        color: #4b5563 !important;
+        border: 1px solid #e2e8f0 !important;
+        border-radius: 10px !important;
+        padding: 0.55rem 1.2rem !important;
         font-weight: 500 !important;
-        font-size: 1.05rem !important;
-        box-shadow: 0 4px 6px rgba(0,0,0,0.05) !important;
-        transition: all 0.2s ease-in-out;
+        font-size: 0.95rem !important;
+        transition: all 0.2s ease-in-out !important;
+        height: auto !important;
+        box-shadow: none !important;
+    }
+    button[kind="secondary"]:hover {
+        background-color: #f8fafc !important;
+        border-color: #cbd5e1 !important;
+        color: #0f172a !important;
+        transform: none !important;
     }
     
-    div.stApp div[data-testid="block-container"] div[data-testid="stVerticalBlock"] > div.element-container:nth-child(3) button[kind="secondary"]:hover {
-        background-color: #3f4451 !important;
-        border-color: #4b5563 !important;
-        color: #ffffff !important;
-        transform: translateY(-2px);
+    /* Barra de Navegação Superior (Menu de Abas) baseada no âncora */
+    div:has(> .nav-anchor) + div div[data-testid="stHorizontalBlock"] {
+        background-color: #ffffff !important;
+        padding: 8px !important;
+        border-radius: 14px !important;
+        border: 1px solid #e2e8f0 !important;
+        margin-bottom: 25px !important;
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.02) !important;
+    }
+    
+    /* Ajustes específicos dos botões dentro da navegação */
+    div:has(> .nav-anchor) + div div[data-testid="stHorizontalBlock"] button {
+        height: 48px !important;
+        margin: 0 !important;
+        border-radius: 10px !important;
+    }
+    
+    /* Botão inativo na navegação - sem bordas e transparente */
+    div:has(> .nav-anchor) + div div[data-testid="stHorizontalBlock"] button[kind="secondary"] {
+        background-color: transparent !important;
+        color: #64748b !important;
+        border: none !important;
+    }
+    div:has(> .nav-anchor) + div div[data-testid="stHorizontalBlock"] button[kind="secondary"]:hover {
+        background-color: #f1f5f9 !important;
+        color: #334155 !important;
     }
     
     .stAlert {
-        border-radius: 12px;
+        border-radius: 12px !important;
+        border: 1px solid #f1f5f9 !important;
     }
     
+    /* Cartão Customizado Premium */
     .custom-card {
         background-color: #ffffff;
-        border-radius: 12px;
+        border-radius: 14px;
         padding: 20px;
-        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.02);
+        border: 1px solid #f1f5f9;
         border-left: 5px solid #6366f1;
-        border-top: 1px solid #e2e8f0;
-        border-right: 1px solid #e2e8f0;
-        border-bottom: 1px solid #e2e8f0;
-        margin-bottom: 15px;
+        margin-bottom: 12px;
+        transition: all 0.2s ease-in-out;
     }
     
+    .custom-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.04);
+    }
+    
+    /* Cartão de Métrica do Dashboard */
     .metric-card {
         background-color: #ffffff;
-        border-radius: 12px;
-        padding: 20px;
-        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
+        border-radius: 14px;
+        padding: 18px 20px;
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.02);
+        border: 1px solid #f1f5f9;
         border-left: 5px solid #10b981;
-        border-top: 1px solid #e2e8f0;
-        border-right: 1px solid #e2e8f0;
-        border-bottom: 1px solid #e2e8f0;
-        margin-bottom: 15px;
+        margin-bottom: 12px;
+        transition: all 0.2s ease-in-out;
+    }
+    
+    .metric-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.04);
     }
     
     .metric-title {
-        font-size: 0.85rem;
+        font-size: 0.8rem;
         color: #64748b;
         font-weight: 600;
         text-transform: uppercase;
@@ -313,38 +360,40 @@ st.markdown("""
     }
     
     .metric-value {
-        font-size: 1.75rem;
+        font-size: 1.85rem;
         color: #0f172a;
         font-weight: 700;
-        margin-top: 5px;
+        margin-top: 4px;
     }
     
+    /* Botão Flutuante de Feedback Moderno (Glassmorphism + Gradient) */
     .floating-feedback-btn {
         position: fixed;
-        bottom: 25px;
-        right: 25px;
-        width: 60px;
-        height: 60px;
-        background-color: #8257e5 !important;
+        bottom: 30px;
+        right: 30px;
+        width: 56px;
+        height: 56px;
+        background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%) !important;
         color: white !important;
         border-radius: 50%;
         text-align: center;
-        box-shadow: 0 4px 12px rgba(130, 87, 229, 0.4);
-        z-index: 999999;
+        box-shadow: 0 10px 25px -5px rgba(99, 102, 241, 0.4), 0 8px 10px -6px rgba(99, 102, 241, 0.4) !important;
+        z-index: 99999;
         display: flex;
         align-items: center;
         justify-content: center;
         text-decoration: none !important;
-        font-size: 26px !important;
-        transition: transform 0.2s, background-color 0.2s;
+        font-size: 24px !important;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     }
     .floating-feedback-btn:hover {
-        transform: scale(1.1);
-        background-color: #996dff !important;
+        transform: scale(1.1) rotate(10deg);
+        box-shadow: 0 20px 25px -5px rgba(99, 102, 241, 0.5);
         color: white !important;
     }
     </style>
-    """, unsafe_allow_html=True)
+""", unsafe_allow_html=True)
+
 
 # Renderiza o botão flutuante de feedback
 st.markdown(
@@ -492,7 +541,8 @@ st.markdown("<h2 style='text-align: center; color: #1e293b; margin-bottom: 20px;
 if 'selection' not in st.session_state:
     st.session_state.selection = '📝 Registrar Ocorrência'
 
-# A remoção do st.container garante que o background dark injetado no stHorizontalBlock ocupe tudo
+# Âncora CSS para estilização segura do bloco de navegação
+st.markdown('<div class="nav-anchor"></div>', unsafe_allow_html=True)
 col_m1, col_m2, col_m3 = st.columns(3)
 with col_m1:
     if st.button("📝 Registrar Ocorrência", use_container_width=True, type="primary" if st.session_state.selection == '📝 Registrar Ocorrência' else "secondary"):
@@ -508,7 +558,7 @@ with col_m3:
         st.rerun()
 
 selection = st.session_state.selection
-st.markdown("<hr style='margin-top: 5px; margin-bottom: 25px;'>", unsafe_allow_html=True)
+st.markdown("<div style='margin-top: 10px; margin-bottom: 25px;'></div>", unsafe_allow_html=True)
 
 # Lógica de exibição baseada na seleção
 if selection == '📝 Registrar Ocorrência':
@@ -525,7 +575,7 @@ if selection == '📝 Registrar Ocorrência':
     elif not alunos:
         st.warning("⚠️ Nenhum aluno cadastrado no sistema. Acesse a seção 'Administração' para importar ou cadastrar alunos.")
     else:
-        with st.container():
+        with st.container(border=True):
             st.markdown("### 1. Quem está registrando?")
             prof_dict = {f"{p.nome} (Destino: {p.viagem or 'Qualquer'} | {p.onibus or 'Sem Ônibus'})": p.id for p in professores}
             prof_selecionado = st.selectbox(
@@ -551,7 +601,7 @@ if selection == '📝 Registrar Ocorrência':
                 
         st.markdown("<br>", unsafe_allow_html=True)
         
-        with st.container():
+        with st.container(border=True):
             st.markdown("### 2. Filtros e Seleção do Aluno")
             col_f1, col_f2 = st.columns(2)
             with col_f1:
@@ -602,7 +652,7 @@ if selection == '📝 Registrar Ocorrência':
                 
                 st.markdown("<br>", unsafe_allow_html=True)
                 
-                with st.container():
+                with st.container(border=True):
                     st.markdown("### 3. Detalhes da Ocorrência")
                     st.write("Assinale quais critérios do regulamento motivaram este registro:")
                     
@@ -708,7 +758,7 @@ elif selection == '📊 Dashboard da Coordenação':
     with st.container(border=True):
         col1, col2, col3, col4 = st.columns(4)
         with col1:
-            st.markdown(f'<div class="metric-card"><div class="metric-title">Total Alunos</div><div class="metric-value">{total_alunos}</div></div>', unsafe_allow_html=True)
+            st.markdown(f'<div class="metric-card" style="border-left-color: #4f46e5;"><div class="metric-title">Total Alunos</div><div class="metric-value">{total_alunos}</div></div>', unsafe_allow_html=True)
         with col2:
             st.markdown(f'<div class="metric-card" style="border-left-color: #10b981;"><div class="metric-title">Total Professores</div><div class="metric-value">{total_profs}</div></div>', unsafe_allow_html=True)
         with col3:
