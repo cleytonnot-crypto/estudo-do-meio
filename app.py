@@ -187,48 +187,24 @@ st.markdown("""
         font-family: 'Outfit', sans-serif;
     }
     
-    [data-testid="stSidebar"] {
-        background-color: #0f172a !important;
-        border-right: 1px solid #1e293b;
+    /* Reduzir paddings extremos para Mobile */
+    .block-container {
+        padding-top: 2rem !important;
+        padding-bottom: 2rem !important;
+        padding-left: 1rem !important;
+        padding-right: 1rem !important;
+        max-width: 100% !important;
     }
     
-    [data-testid="stSidebar"] h1, 
-    [data-testid="stSidebar"] h2, 
-    [data-testid="stSidebar"] h3, 
-    [data-testid="stSidebar"] h4,
-    [data-testid="stSidebar"] [data-testid="stMarkdownContainer"] h1 {
-        color: #ffffff !important;
-        font-weight: 700 !important;
-    }
-    
-    [data-testid="stSidebar"] label,
-    [data-testid="stSidebar"] p,
-    [data-testid="stSidebar"] span,
-    [data-testid="stSidebar"] div {
-        color: #e2e8f0 !important;
-    }
-    
-    [data-testid="stSidebar"] div[data-testid="stRadio"] label p {
-        color: #cbd5e1 !important;
-        font-size: 1.05rem !important;
-        font-weight: 500 !important;
-    }
-    
-    [data-testid="stSidebar"] div[data-testid="stMarkdownContainer"] caption,
-    [data-testid="stSidebar"] span {
-        color: #94a3b8 !important;
-    }
-    
-
     h1 {
-        color: #1e3a8a;
+        color: #ffffff;
         font-family: 'Outfit', sans-serif;
         font-weight: 700;
         margin-bottom: 1.5rem;
     }
     
-    h2, h3 {
-        color: #2563eb;
+    h2, h3, h4, h5 {
+        color: #8257e5;
         font-family: 'Outfit', sans-serif;
         font-weight: 600;
     }
@@ -237,21 +213,33 @@ st.markdown("""
         border-radius: 12px;
     }
     
-    .metric-card {
-        background-color: #ffffff;
+    .custom-card {
+        background-color: #1a1d24;
         border-radius: 12px;
         padding: 20px;
-        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
-        border-left: 5px solid #2563eb;
-        border-top: 1px solid #f1f5f9;
-        border-right: 1px solid #f1f5f9;
-        border-bottom: 1px solid #f1f5f9;
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.2), 0 2px 4px -1px rgba(0, 0, 0, 0.1);
+        border-left: 5px solid #8257e5;
+        border-top: 1px solid #292d36;
+        border-right: 1px solid #292d36;
+        border-bottom: 1px solid #292d36;
+        margin-bottom: 15px;
+    }
+    
+    .metric-card {
+        background-color: #1a1d24;
+        border-radius: 12px;
+        padding: 20px;
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.2), 0 2px 4px -1px rgba(0, 0, 0, 0.1);
+        border-left: 5px solid #00e676; /* Verde Esmeralda para métricas */
+        border-top: 1px solid #292d36;
+        border-right: 1px solid #292d36;
+        border-bottom: 1px solid #292d36;
         margin-bottom: 15px;
     }
     
     .metric-title {
         font-size: 0.85rem;
-        color: #64748b;
+        color: #a8a8b3;
         font-weight: 600;
         text-transform: uppercase;
         letter-spacing: 0.05em;
@@ -259,7 +247,7 @@ st.markdown("""
     
     .metric-value {
         font-size: 1.75rem;
-        color: #0f172a;
+        color: #ffffff;
         font-weight: 700;
         margin-top: 5px;
     }
@@ -270,11 +258,11 @@ st.markdown("""
         right: 25px;
         width: 60px;
         height: 60px;
-        background-color: #ef4444 !important;
+        background-color: #8257e5 !important;
         color: white !important;
         border-radius: 50%;
         text-align: center;
-        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
+        box-shadow: 0 4px 12px rgba(130, 87, 229, 0.4);
         z-index: 999999;
         display: flex;
         align-items: center;
@@ -285,7 +273,7 @@ st.markdown("""
     }
     .floating-feedback-btn:hover {
         transform: scale(1.1);
-        background-color: #dc2626 !important;
+        background-color: #996dff !important;
         color: white !important;
     }
     </style>
@@ -436,8 +424,8 @@ selection = st.sidebar.radio("Navegue pelas seções:", menu_options)
 
 # Lógica de exibição baseada na seleção
 if selection == '📝 Registrar Ocorrência':
-    st.title("📝 Registro de Ocorrência (AA & CS)")
-    st.write("Módulo para professores e monitores registrarem ocorrências de Atitude Frente à Aprendizagem (AA) e Comportamento Social (CS) por veículo de viagem.")
+    st.markdown("<h1>📝 Registro de Ocorrência <span style='font-size:1.2rem;color:#8257e5;'>(AA & CS)</span></h1>", unsafe_allow_html=True)
+    st.write("Módulo para professores e monitores registrarem ocorrências de Atitude Frente à Aprendizagem (AA) e Comportamento Social (CS).")
     
     # Busca professores
     with get_db() as db:
@@ -449,126 +437,128 @@ if selection == '📝 Registrar Ocorrência':
     elif not alunos:
         st.warning("⚠️ Nenhum aluno cadastrado no sistema. Acesse a seção 'Administração' para importar ou cadastrar alunos.")
     else:
-        # Perfil do Professor Avaliador
-        prof_dict = {f"{p.nome} (Destino: {p.viagem or 'Qualquer'} | {p.onibus or 'Sem Ônibus'})": p.id for p in professores}
-        prof_selecionado = st.selectbox("👤 Selecione quem está registrando a ocorrência:", list(prof_dict.keys()))
-        professor_id = prof_dict[prof_selecionado]
-        
-        # Recupera informações do professor para filtros inteligentes
-        with get_db() as db:
-            prof_obj = db.query(Professor).filter(Professor.id == professor_id).first()
-            prof_viagem = prof_obj.viagem
-            prof_onibus = prof_obj.onibus
-            
-        st.markdown("---")
-        
-        # Filtros para busca de aluno
-        col_f1, col_f2 = st.columns(2)
-        with col_f1:
-            filtrar_mesmo_destino = st.checkbox("Filtrar alunos do mesmo destino do professor", value=True)
-        with col_f2:
-            onibus_existentes = list(set([a.onibus for a in alunos if a.onibus]))
-            onibus_filtro = st.selectbox("Filtrar lista de alunos por Ônibus:", ["Todos"] + onibus_existentes)
-            
-        # Aplica os filtros na listagem de alunos
-        alunos_filtrados = alunos
-        if filtrar_mesmo_destino and prof_viagem:
-            alunos_filtrados = [a for a in alunos_filtrados if a.viagem_destino == prof_viagem]
-        if onibus_filtro != "Todos":
-            alunos_filtrados = [a for a in alunos_filtrados if a.onibus == onibus_filtro]
-            
-        if not alunos_filtrados:
-            st.info("ℹ️ Nenhum aluno atende aos filtros de destino e ônibus selecionados.")
-        else:
-            # Seleção do aluno
-            aluno_dict = {f"{a.nome} (RA: {a.ra} | Destino: {a.viagem_destino} | {a.onibus or 'Sem Ônibus'})": a.id for a in alunos_filtrados}
-            aluno_selecionado = st.selectbox("🎓 Selecione o Aluno:", list(aluno_dict.keys()))
-            aluno_id = aluno_dict[aluno_selecionado]
+        with st.container():
+            st.markdown("### 1. Quem está registrando?")
+            prof_dict = {f"{p.nome} (Destino: {p.viagem or 'Qualquer'} | {p.onibus or 'Sem Ônibus'})": p.id for p in professores}
+            prof_selecionado = st.selectbox("Selecione o Professor/Monitor:", list(prof_dict.keys()))
+            professor_id = prof_dict[prof_selecionado]
             
             with get_db() as db:
-                aluno_obj = db.query(Aluno).filter(Aluno.id == aluno_id).first()
+                prof_obj = db.query(Professor).filter(Professor.id == professor_id).first()
+                prof_viagem = prof_obj.viagem
+                prof_onibus = prof_obj.onibus
                 
-            # Card de detalhes do aluno
-            st.markdown(f"""
-            <div style="background-color: #eff6ff; padding: 15px; border-radius: 10px; border-left: 5px solid #2563eb; margin-bottom: 20px;">
-                <h4 style="margin: 0; color: #1e3a8a; font-size: 1.1rem;">🎓 {aluno_obj.nome}</h4>
-                <p style="margin: 5px 0 0 0; color: #4b5563; font-size: 0.9rem;">
-                    <b>RA:</b> {aluno_obj.ra} | <b>Ano/Turma:</b> {aluno_obj.ano} | <b>Destino de Viagem:</b> {aluno_obj.viagem_destino} | <b>Veículo/Ônibus:</b> {aluno_obj.onibus or 'Não informado'}
-                </p>
-            </div>
-            """, unsafe_allow_html=True)
-            
-            # Formulário de Ocorrência
-            st.subheader("📋 Detalhes da Ocorrência")
-            st.write("Assinale abaixo quais os critérios do regulamento motivaram este registro:")
-            
-            tab_aa, tab_cs = st.tabs(["Atitude Frente à Aprendizagem (AA)", "Comportamento Social (CS)"])
-            
-            with tab_aa:
-                st.write("**Selecione as ocorrências de Atitude Frente à Aprendizagem (AA):**")
-                aa_selecionados = []
-                for crit in CRITERIOS_AA:
-                    if st.checkbox(crit, key=f"aa_{crit}"):
-                        aa_selecionados.append(crit)
-                        
-            with tab_cs:
-                st.write("**Selecione as ocorrências de Comportamento Social (CS):**")
-                cs_selecionados = []
-                for crit in CRITERIOS_CS:
-                    if st.checkbox(crit, key=f"cs_{crit}"):
-                        cs_selecionados.append(crit)
-                        
-            observacoes = st.text_area(
-                "📝 Detalhamento e Contextualização do Ocorrido (Obrigatório):", 
-                placeholder="Descreva o que aconteceu em detalhes (ações, horários, atitudes, etc.) para justificar os critérios assinalados acima."
-            )
-            
-            if st.button("💾 Registrar Ocorrência", type="primary"):
-                if not aa_selecionados and not cs_selecionados:
-                    st.error("❌ Erro: Selecione ao menos um critério de AA ou CS para registrar a ocorrência.")
-                elif not observacoes.strip():
-                    st.error("❌ Erro: O detalhamento/descrição da ocorrência é obrigatório.")
-                else:
-                    with get_db() as db:
-                        try:
-                            nova_oco = Avaliacao(
-                                professor_id=professor_id,
-                                aluno_id=aluno_id,
-                                atitude_aa="; ".join(aa_selecionados) if aa_selecionados else None,
-                                comportamento_cs="; ".join(cs_selecionados) if cs_selecionados else None,
-                                observacoes=observacoes.strip()
-                            )
-                            db.add(nova_oco)
-                            db.commit()
-                            st.success(f"✅ Sucesso! Ocorrência registrada para o aluno **{aluno_obj.nome}**.")
-                            st.rerun()
-                        except Exception as e:
-                            db.rollback()
-                            st.error(f"❌ Erro ao salvar ocorrência: {e}")
-            
-            # Histórico individual do Aluno
-            with get_db() as db:
-                historico = db.query(Avaliacao).filter(Avaliacao.aluno_id == aluno_id).order_by(Avaliacao.data_hora.desc()).all()
+        st.markdown("<br>", unsafe_allow_html=True)
+        
+        with st.container():
+            st.markdown("### 2. Filtros e Seleção do Aluno")
+            col_f1, col_f2 = st.columns(2)
+            with col_f1:
+                filtrar_mesmo_destino = st.checkbox("Somente alunos do mesmo destino do professor", value=True)
+            with col_f2:
+                onibus_existentes = list(set([a.onibus for a in alunos if a.onibus]))
+                onibus_filtro = st.selectbox("Filtrar por Ônibus:", ["Todos"] + onibus_existentes)
                 
-                if historico:
-                    st.markdown("---")
-                    st.subheader(f"📜 Histórico de Ocorrências Gravadas - {aluno_obj.nome}")
-                    for h in historico:
-                        data_str = h.data_hora.strftime("%d/%m/%Y %H:%M")
-                        prof_nome = h.professor.nome if h.professor else "N/A"
-                        st.markdown(f"""
-                        <div style="background-color: #fafafa; border: 1px solid #e2e8f0; padding: 15px; border-radius: 8px; margin-bottom: 12px;">
-                            <div style="display: flex; justify-content: space-between; margin-bottom: 8px; font-size: 0.85rem;">
-                                <span style="font-weight: 600; color: #334155;">👤 Registrador: {prof_nome}</span>
-                                <span style="color: #64748b;">📅 {data_str}</span>
+            alunos_filtrados = alunos
+            if filtrar_mesmo_destino and prof_viagem:
+                alunos_filtrados = [a for a in alunos_filtrados if a.viagem_destino == prof_viagem]
+            if onibus_filtro != "Todos":
+                alunos_filtrados = [a for a in alunos_filtrados if a.onibus == onibus_filtro]
+                
+            if not alunos_filtrados:
+                st.info("ℹ️ Nenhum aluno atende aos filtros de destino e ônibus selecionados.")
+            else:
+                aluno_dict = {f"{a.nome} (RA: {a.ra} | Destino: {a.viagem_destino} | {a.onibus or 'Sem Ônibus'})": a.id for a in alunos_filtrados}
+                aluno_selecionado = st.selectbox("Selecione o Aluno:", list(aluno_dict.keys()))
+                aluno_id = aluno_dict[aluno_selecionado]
+                
+                with get_db() as db:
+                    aluno_obj = db.query(Aluno).filter(Aluno.id == aluno_id).first()
+                    
+                st.markdown(f"""
+                <div class="custom-card">
+                    <h4 style="margin: 0; color: #8257e5; font-size: 1.1rem;">🎓 {aluno_obj.nome}</h4>
+                    <p style="margin: 5px 0 0 0; color: #a8a8b3; font-size: 0.9rem;">
+                        <b>RA:</b> {aluno_obj.ra} &nbsp;|&nbsp; <b>Turma:</b> {aluno_obj.ano} &nbsp;|&nbsp; <b>Destino:</b> {aluno_obj.viagem_destino} &nbsp;|&nbsp; <b>Ônibus:</b> {aluno_obj.onibus or 'N/A'}
+                    </p>
+                </div>
+                """, unsafe_allow_html=True)
+                
+                st.markdown("<br>", unsafe_allow_html=True)
+                
+                with st.container():
+                    st.markdown("### 3. Detalhes da Ocorrência")
+                    st.write("Assinale quais critérios do regulamento motivaram este registro:")
+                    
+                    tab_aa, tab_cs = st.tabs(["Atitude (AA)", "Comportamento (CS)"])
+                    
+                    with tab_aa:
+                        st.caption("Selecione as ocorrências de Atitude Frente à Aprendizagem:")
+                        aa_selecionados = []
+                        for crit in CRITERIOS_AA:
+                            if st.checkbox(crit, key=f"aa_{crit}"):
+                                aa_selecionados.append(crit)
+                                
+                    with tab_cs:
+                        st.caption("Selecione as ocorrências de Comportamento Social:")
+                        cs_selecionados = []
+                        for crit in CRITERIOS_CS:
+                            if st.checkbox(crit, key=f"cs_{crit}"):
+                                cs_selecionados.append(crit)
+                                
+                    st.markdown("<br>", unsafe_allow_html=True)
+                    observacoes = st.text_area(
+                        "📝 Detalhamento e Contextualização do Ocorrido (Obrigatório):", 
+                        placeholder="Descreva as ações, horários e contexto para justificar os critérios assinalados."
+                    )
+                    
+                    if st.button("💾 Registrar Ocorrência", type="primary", use_container_width=True):
+                        if not aa_selecionados and not cs_selecionados:
+                            st.error("❌ Erro: Selecione ao menos um critério de AA ou CS.")
+                        elif not observacoes.strip():
+                            st.error("❌ Erro: O detalhamento é obrigatório.")
+                        else:
+                            with get_db() as db:
+                                try:
+                                    nova_oco = Avaliacao(
+                                        professor_id=professor_id,
+                                        aluno_id=aluno_id,
+                                        atitude_aa="; ".join(aa_selecionados) if aa_selecionados else None,
+                                        comportamento_cs="; ".join(cs_selecionados) if cs_selecionados else None,
+                                        observacoes=observacoes.strip()
+                                    )
+                                    db.add(nova_oco)
+                                    db.commit()
+                                    st.success(f"✅ Sucesso! Ocorrência registrada para **{aluno_obj.nome}**.")
+                                    import time
+                                    time.sleep(1)
+                                    st.rerun()
+                                except Exception as e:
+                                    db.rollback()
+                                    st.error(f"❌ Erro ao salvar ocorrência: {e}")
+                
+                # Histórico individual do Aluno
+                with get_db() as db:
+                    historico = db.query(Avaliacao).filter(Avaliacao.aluno_id == aluno_id).order_by(Avaliacao.data_hora.desc()).all()
+                    
+                    if historico:
+                        st.markdown("<br>### 📜 Histórico Recente do Aluno", unsafe_allow_html=True)
+                        for h in historico:
+                            data_str = h.data_hora.strftime("%d/%m/%Y %H:%M")
+                            prof_nome = h.professor.nome if h.professor else "N/A"
+                            st.markdown(f"""
+                            <div class="custom-card" style="margin-bottom: 12px; padding: 15px;">
+                                <div style="display: flex; justify-content: space-between; margin-bottom: 8px; font-size: 0.85rem;">
+                                    <span style="font-weight: 600; color: #e2e8f0;">👤 Por: {prof_nome}</span>
+                                    <span style="color: #a8a8b3;">📅 {data_str}</span>
+                                </div>
+                                {f'<p style="margin: 2px 0; color: #8257e5; font-size: 0.9rem;"><b>AA:</b> {h.atitude_aa}</p>' if h.atitude_aa else ''}
+                                {f'<p style="margin: 2px 0; color: #00e676; font-size: 0.9rem;"><b>CS:</b> {h.comportamento_cs}</p>' if h.comportamento_cs else ''}
+                                <p style="margin: 8px 0 0 0; font-size: 0.95rem; color: #ffffff; border-top: 1px dashed #292d36; padding-top: 8px;">
+                                    <i>"{h.observacoes}"</i>
+                                </p>
                             </div>
-                            {f'<p style="margin: 2px 0; color: #1e3a8a; font-size: 0.9rem;"><b>AA:</b> {h.atitude_aa}</p>' if h.atitude_aa else ''}
-                            {f'<p style="margin: 2px 0; color: #b45309; font-size: 0.9rem;"><b>CS:</b> {h.comportamento_cs}</p>' if h.comportamento_cs else ''}
-                            <p style="margin: 8px 0 0 0; font-size: 0.95rem; color: #0f172a; border-top: 1px dashed #e2e8f0; padding-top: 8px;">
-                                <i>"{h.observacoes}"</i>
-                            </p>
-                        </div>
-                        """, unsafe_allow_html=True)
+                            """, unsafe_allow_html=True)
 
 elif selection == '📊 Dashboard da Coordenação':
     st.title("📊 Dashboard de Monitoramento Pedagógico")
@@ -770,8 +760,37 @@ elif selection == '📊 Dashboard da Coordenação':
         
         # Remove coluna auxiliar de data raw antes de exibir
         df_exibicao = df_filtrado.drop(columns=["data_hora_raw"]) if "data_hora_raw" in df_filtrado.columns else df_filtrado
-        st.dataframe(df_exibicao, use_container_width=True, hide_index=True)
         
+        st.markdown("### 📋 Resultados")
+        if df_exibicao.empty:
+            st.info("Nenhum registro encontrado para os filtros atuais.")
+        else:
+            for idx, row in df_exibicao.iterrows():
+                aa_val = str(row.get("Atitudes (AA)", ""))
+                cs_val = str(row.get("Comportamento (CS)", ""))
+                aa_html = f'<p style="margin: 2px 0; color: #8257e5; font-size: 0.9rem;"><b>AA:</b> {aa_val}</p>' if aa_val and aa_val.lower() != 'nan' and aa_val.strip() else ''
+                cs_html = f'<p style="margin: 2px 0; color: #00e676; font-size: 0.9rem;"><b>CS:</b> {cs_val}</p>' if cs_val and cs_val.lower() != 'nan' and cs_val.strip() else ''
+                obs_val = str(row.get("Observações / Detalhamento", ""))
+                obs = obs_val if obs_val.lower() != 'nan' else ''
+                
+                card_html = f"""
+                <div class="custom-card" style="margin-bottom: 15px; padding: 15px;">
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 8px; font-size: 0.85rem;">
+                        <span style="font-weight: 600; color: #e2e8f0;">🎓 {row["Aluno"]} <span style="color:#64748b; font-weight:normal;">({row["Ano/Turma"]})</span></span>
+                        <span style="color: #a8a8b3;">📅 {row["Data/Hora"]}</span>
+                    </div>
+                    <div style="font-size: 0.85rem; color: #a8a8b3; margin-bottom: 10px;">
+                        📍 {row["Destino"]} &nbsp;|&nbsp; 🚌 {row["Ônibus"]} &nbsp;|&nbsp; 👤 Prof: {row["Registrado por"]}
+                    </div>
+                    {aa_html}
+                    {cs_html}
+                    <p style="margin: 8px 0 0 0; font-size: 0.95rem; color: #ffffff; border-top: 1px dashed #292d36; padding-top: 8px;">
+                        <i>"{obs}"</i>
+                    </p>
+                </div>
+                """
+                st.markdown(card_html, unsafe_allow_html=True)
+
         # Exportação para Excel (sem coluna auxiliar)
         buffer = io.BytesIO()
         with pd.ExcelWriter(buffer, engine='openpyxl') as writer:
@@ -1232,8 +1251,23 @@ elif selection == '⚙️ Administração':
             if not dados_fb:
                 st.caption("Nenhum feedback corresponde ao filtro selecionado.")
             else:
-                df_fb_show = pd.DataFrame(dados_fb)
-                st.dataframe(df_fb_show, use_container_width=True, hide_index=True)
+                for d in dados_fb:
+                    status_color = "#00e676" if d["Status"] == "Resolvido" else "#ef4444"
+                    card_html = f"""
+                    <div class="custom-card" style="margin-bottom: 15px; padding: 15px; border-left-color: {status_color};">
+                        <div style="display: flex; justify-content: space-between; margin-bottom: 8px; font-size: 0.85rem;">
+                            <span style="font-weight: 600; color: #e2e8f0;">🆔 #{d["ID"]} &nbsp;|&nbsp; 👤 {d["Nome"]}</span>
+                            <span style="color: #a8a8b3;">📅 {d["Data/Hora"]}</span>
+                        </div>
+                        <div style="font-size: 0.85rem; color: #a8a8b3; margin-bottom: 10px;">
+                            🏷️ Tipo: {d["Tipo"]} &nbsp;|&nbsp; 📍 Seção: {d["Seção"]} &nbsp;|&nbsp; <span style="color:{status_color};font-weight:bold;">{d["Status"]}</span>
+                        </div>
+                        <p style="margin: 8px 0 0 0; font-size: 0.95rem; color: #ffffff; border-top: 1px dashed #292d36; padding-top: 8px;">
+                            <i>"{d["Descrição"]}"</i>
+                        </p>
+                    </div>
+                    """
+                    st.markdown(card_html, unsafe_allow_html=True)
                 
                 # Ações individuais
                 st.markdown("#### 🛠️ Gerenciar Reporte")
@@ -1247,9 +1281,9 @@ elif selection == '⚙️ Administração':
                         
                     if fb_obj:
                         st.markdown(f"""
-                        <div style="background-color: #f8fafc; border: 1px solid #cbd5e1; padding: 15px; border-radius: 8px; margin-bottom: 15px; color: #0f172a;">
-                            <b>Enviado por:</b> {fb_obj.nome or 'Anônimo'} | <b>Tipo:</b> {fb_obj.tipo} | <b>Seção:</b> {fb_obj.secao}<br>
-                            <b>Descrição:</b> <i>"{fb_obj.descricao}"</i>
+                        <div class="custom-card" style="margin-bottom: 15px; padding: 15px;">
+                            <span style="color: #a8a8b3; font-size: 0.85rem;">Você está gerenciando o reporte:</span><br>
+                            <span style="color: #ffffff; font-weight: 600;">🆔 #{fb_obj.id} - Enviado por: {fb_obj.nome or 'Anônimo'}</span>
                         </div>
                         """, unsafe_allow_html=True)
                         
