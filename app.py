@@ -986,4 +986,4 @@ elif selection == '⚙️ Administração':
 
 # Rodapé lateral
 st.sidebar.markdown("---")
-st.sidebar.caption("Desenvolvido por Antigravity v1.0")
+st.sidebar.caption("Desenvolvido por cleytonnot-crypto & Antigravity v1.0")
