@@ -229,3 +229,23 @@ def test_processar_excel_professores_duplicados(db_session):
     assert "Prof Novo" in nomes
 
 
+def test_normalizar_coluna_helper():
+    """Testa a normalização de nomes de colunas do Excel, incluindo acentuação e sinônimos."""
+    from app import normalizar_coluna
+    
+    # Básicos e acentos
+    assert normalizar_coluna("Nome") == "nome"
+    assert normalizar_coluna("E-mail") == "email"
+    assert normalizar_coluna("email") == "email"
+    assert normalizar_coluna("Ônibus") == "onibus"
+    assert normalizar_coluna("ônibus") == "onibus"
+    assert normalizar_coluna("ONIBUS") == "onibus"
+    
+    # Sinônimos
+    assert normalizar_coluna("Destino") == "viagem_destino"
+    assert normalizar_coluna("viagem_destino") == "viagem_destino"
+    assert normalizar_coluna("Turma") == "ano"
+    assert normalizar_coluna("Série") == "ano"
+    assert normalizar_coluna("Classe") == "ano"
+
+

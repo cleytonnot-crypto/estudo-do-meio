@@ -2,10 +2,25 @@ import streamlit as st
 import pandas as pd
 import io
 import os
+import unicodedata
 from datetime import datetime
 from contextlib import contextmanager
 from database import inicializar_banco, SessionLocal, Professor, Aluno, Avaliacao, Feedback
 from sqlalchemy import func
+
+def normalizar_coluna(col):
+    if not isinstance(col, str):
+        return str(col)
+    col_norm = unicodedata.normalize('NFKD', col).encode('ASCII', 'ignore').decode('utf-8')
+    col_norm = col_norm.strip().lower().replace("-", "").replace(" ", "_")
+    synonyms = {
+        "destino": "viagem_destino",
+        "viagem_destino": "viagem_destino",
+        "turma": "ano",
+        "serie": "ano",
+        "classe": "ano",
+    }
+    return synonyms.get(col_norm, col_norm)
 
 def limpar_valor_excel(val):
     if pd.isna(val):
@@ -28,6 +43,7 @@ def limpar_nome(val):
     return str(val).strip()
 
 def processar_excel_professores(df, db):
+    df.columns = [normalizar_coluna(col) for col in df.columns]
     expected = ['nome', 'email', 'viagem']
     if not all(col in df.columns for col in expected):
         raise ValueError(f"O arquivo deve conter as colunas: {expected}")
@@ -68,6 +84,7 @@ def processar_excel_professores(df, db):
     return count, duplicates_skipped
 
 def processar_excel_alunos(df, db):
+    df.columns = [normalizar_coluna(col) for col in df.columns]
     expected = ['nome', 'ra', 'email', 'ano', 'viagem_destino']
     if not all(col in df.columns for col in expected):
         raise ValueError(f"O arquivo deve conter as colunas: {expected}")
