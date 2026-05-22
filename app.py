@@ -842,11 +842,37 @@ if selection == '📝 Registrar Ocorrência':
                     if total_desconto_aa > 0 or total_desconto_cs > 0:
                         st.warning(f"⚠️ **Resumo da Ocorrência:** Marcar as infrações selecionadas irá subtrair **-{total_desconto_aa:.2f} pts** em Atitude (AA) e **-{total_desconto_cs:.2f} pts** em Comportamento (CS) da nota do aluno.")
                     
+                    # Verificação de duplicidade anti-clique acidental
+                    aa_str = "; ".join(aa_selecionados) if aa_selecionados else None
+                    cs_str = "; ".join(cs_selecionados) if cs_selecionados else None
+                    obs_str = observacoes.strip()
+                    
+                    with get_db() as db:
+                        ultima_oco = db.query(Avaliacao).filter(
+                            Avaliacao.aluno_id == aluno_id,
+                            Avaliacao.professor_id == professor_id
+                        ).order_by(Avaliacao.id.desc()).first()
+                        
+                        is_duplicada = (
+                            ultima_oco is not None and 
+                            (ultima_oco.atitude_aa or "") == (aa_str or "") and 
+                            (ultima_oco.comportamento_cs or "") == (cs_str or "") and 
+                            (ultima_oco.observacoes or "") == obs_str
+                        )
+                        
+                    if is_duplicada:
+                        st.error("⚠️ **Aviso:** Você já registrou uma ocorrência **exatamente igual** para este aluno agora pouco. Para evitar cliques acidentais, marque a caixa abaixo se deseja realmente registrar novamente.")
+                        confirmar_duplicidade = st.checkbox("Sim, tenho certeza que desejo registrar de novo (duplicar ocorrência).")
+                    else:
+                        confirmar_duplicidade = True
+                    
                     if st.button("💾 Registrar Ocorrência", type="primary", use_container_width=True):
                         if not aa_selecionados and not cs_selecionados:
                             st.error("❌ Erro: Selecione ao menos um critério de AA ou CS.")
                         elif not observacoes.strip():
                             st.error("❌ Erro: O detalhamento é obrigatório.")
+                        elif not confirmar_duplicidade:
+                            st.error("❌ Erro: A ocorrência é idêntica à anterior. Confirme a duplicidade marcando a caixa acima.")
                         else:
                             with get_db() as db:
                                 try:
