@@ -471,15 +471,16 @@ if selection == '📝 Registrar Ocorrência':
             with col_f1:
                 filtrar_mesmo_destino = st.checkbox("Somente alunos do mesmo destino do professor", value=True)
             with col_f2:
-                onibus_existentes = list(set([a.onibus for a in alunos if a.onibus]))
-                onibus_filtro = st.selectbox("Filtrar por Ônibus:", ["Todos"] + onibus_existentes)
+                filtrar_mesmo_onibus = st.checkbox("Somente alunos do mesmo ônibus do professor", value=True)
                 
             alunos_filtrados = alunos
             if filtrar_mesmo_destino and prof_viagem:
                 prof_v_clean = str(prof_viagem).strip().upper()
                 alunos_filtrados = [a for a in alunos_filtrados if a.viagem_destino and str(a.viagem_destino).strip().upper() == prof_v_clean]
-            if onibus_filtro != "Todos":
-                alunos_filtrados = [a for a in alunos_filtrados if a.onibus == onibus_filtro]
+                
+            if filtrar_mesmo_onibus and prof_onibus:
+                prof_o_clean = str(prof_onibus).strip().upper()
+                alunos_filtrados = [a for a in alunos_filtrados if a.onibus and str(a.onibus).strip().upper() == prof_o_clean]
                 
             if not alunos_filtrados:
                 st.info("ℹ️ Nenhum aluno atende aos filtros de destino e ônibus selecionados.")
