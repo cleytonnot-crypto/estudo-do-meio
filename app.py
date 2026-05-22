@@ -831,7 +831,8 @@ elif selection == '⚙️ Administração':
     ])
     
     with admin_tab1:
-        st.subheader("Visualizar Cadastros do Sistema")
+        st.subheader("Visualizar e Editar Cadastros do Sistema")
+        st.caption("Dica: Clique duas vezes em uma célula para editá-la. Você também pode adicionar novas linhas abaixo ou selecionar linhas e apertar 'Delete' para excluí-las. Depois de alterar, clique em 'Salvar Alterações'.")
         
         with get_db() as db:
             profs_cadastrados = db.query(Professor).all()
@@ -840,33 +841,149 @@ elif selection == '⚙️ Administração':
         col_v1, col_v2 = st.columns(2)
         with col_v1:
             st.markdown(f"#### 👨‍🏫 Professores ({len(profs_cadastrados)})")
-            if profs_cadastrados:
-                df_profs = pd.DataFrame([{
-                    "ID": p.id,
-                    "Nome": p.nome,
-                    "E-mail": p.email,
-                    "Destino": p.viagem,
-                    "Ônibus": p.onibus
-                } for p in profs_cadastrados])
-                st.dataframe(df_profs, use_container_width=True, hide_index=True)
-            else:
-                st.caption("Nenhum professor cadastrado.")
-                
+            df_profs = pd.DataFrame([{
+                "ID": p.id,
+                "Nome": p.nome,
+                "E-mail": p.email,
+                "Destino": p.viagem,
+                "Ônibus": p.onibus
+            } for p in profs_cadastrados]) if profs_cadastrados else pd.DataFrame(columns=["ID", "Nome", "E-mail", "Destino", "Ônibus"])
+            
+            edited_df_profs = st.data_editor(
+                df_profs, 
+                use_container_width=True, 
+                hide_index=True,
+                num_rows="dynamic",
+                disabled=["ID"],
+                key="editor_profs"
+            )
+            
+            if st.button("Salvar Alterações - Professores", type="primary", use_container_width=True):
+                with get_db() as db_session:
+                    try:
+                        # Update and Add
+                        for idx, row in edited_df_profs.iterrows():
+                            id_val = row["ID"]
+                            nome_val = str(row["Nome"]).strip() if pd.notna(row["Nome"]) else ""
+                            email_val = str(row["E-mail"]).strip() if pd.notna(row["E-mail"]) else ""
+                            
+                            if not nome_val:
+                                continue
+                                
+                            destino_val = str(row["Destino"]).strip() if pd.notna(row["Destino"]) and str(row["Destino"]) != "None" else ""
+                            onibus_val = str(row["Ônibus"]).strip() if pd.notna(row["Ônibus"]) and str(row["Ônibus"]) != "None" else ""
+                            
+                            if pd.isna(id_val) or id_val == "":
+                                novo_prof = Professor(
+                                    nome=nome_val,
+                                    email=email_val,
+                                    viagem=destino_val,
+                                    onibus=onibus_val
+                                )
+                                db_session.add(novo_prof)
+                            else:
+                                prof = db_session.query(Professor).filter(Professor.id == int(id_val)).first()
+                                if prof:
+                                    prof.nome = nome_val
+                                    prof.email = email_val
+                                    prof.viagem = destino_val
+                                    prof.onibus = onibus_val
+                                    
+                        # Delete
+                        existing_ids = [p.id for p in profs_cadastrados]
+                        edited_ids = edited_df_profs["ID"].dropna().astype(int).tolist()
+                        deleted_ids = [eid for eid in existing_ids if eid not in edited_ids]
+                        
+                        for del_id in deleted_ids:
+                            prof_del = db_session.query(Professor).filter(Professor.id == del_id).first()
+                            if prof_del:
+                                db_session.delete(prof_del)
+                                
+                        db_session.commit()
+                        st.success("✅ Alterações de professores salvas com sucesso!")
+                        import time
+                        time.sleep(1)
+                        st.rerun()
+                    except Exception as e:
+                        db_session.rollback()
+                        st.error(f"Erro ao salvar: {e}")
+
         with col_v2:
             st.markdown(f"#### 🎓 Alunos ({len(alunos_cadastrados)})")
-            if alunos_cadastrados:
-                df_alunos = pd.DataFrame([{
-                    "ID": a.id,
-                    "Nome": a.nome,
-                    "RA": a.ra,
-                    "E-mail": a.email,
-                    "Ano/Turma": a.ano,
-                    "Destino": a.viagem_destino,
-                    "Ônibus": a.onibus
-                } for a in alunos_cadastrados])
-                st.dataframe(df_alunos, use_container_width=True, hide_index=True)
-            else:
-                st.caption("Nenhum aluno cadastrado.")
+            df_alunos = pd.DataFrame([{
+                "ID": a.id,
+                "Nome": a.nome,
+                "RA": a.ra,
+                "E-mail": a.email,
+                "Ano/Turma": a.ano,
+                "Destino": a.viagem_destino,
+                "Ônibus": a.onibus
+            } for a in alunos_cadastrados]) if alunos_cadastrados else pd.DataFrame(columns=["ID", "Nome", "RA", "E-mail", "Ano/Turma", "Destino", "Ônibus"])
+            
+            edited_df_alunos = st.data_editor(
+                df_alunos, 
+                use_container_width=True, 
+                hide_index=True,
+                num_rows="dynamic",
+                disabled=["ID"],
+                key="editor_alunos"
+            )
+            
+            if st.button("Salvar Alterações - Alunos", type="primary", use_container_width=True):
+                with get_db() as db_session:
+                    try:
+                        # Update and Add
+                        for idx, row in edited_df_alunos.iterrows():
+                            id_val = row["ID"]
+                            nome_val = str(row["Nome"]).strip() if pd.notna(row["Nome"]) else ""
+                            email_val = str(row["E-mail"]).strip() if pd.notna(row["E-mail"]) else ""
+                            
+                            if not nome_val:
+                                continue
+                                
+                            ra_val = str(row["RA"]).strip() if pd.notna(row["RA"]) and str(row["RA"]) != "None" else ""
+                            ano_val = str(row["Ano/Turma"]).strip() if pd.notna(row["Ano/Turma"]) and str(row["Ano/Turma"]) != "None" else ""
+                            destino_val = str(row["Destino"]).strip() if pd.notna(row["Destino"]) and str(row["Destino"]) != "None" else ""
+                            onibus_val = str(row["Ônibus"]).strip() if pd.notna(row["Ônibus"]) and str(row["Ônibus"]) != "None" else ""
+                            
+                            if pd.isna(id_val) or id_val == "":
+                                novo_aluno = Aluno(
+                                    nome=nome_val,
+                                    ra=ra_val,
+                                    email=email_val,
+                                    ano=ano_val,
+                                    viagem_destino=destino_val,
+                                    onibus=onibus_val
+                                )
+                                db_session.add(novo_aluno)
+                            else:
+                                aluno = db_session.query(Aluno).filter(Aluno.id == int(id_val)).first()
+                                if aluno:
+                                    aluno.nome = nome_val
+                                    aluno.ra = ra_val
+                                    aluno.email = email_val
+                                    aluno.ano = ano_val
+                                    aluno.viagem_destino = destino_val
+                                    aluno.onibus = onibus_val
+                                    
+                        # Delete
+                        existing_ids = [a.id for a in alunos_cadastrados]
+                        edited_ids = edited_df_alunos["ID"].dropna().astype(int).tolist()
+                        deleted_ids = [eid for eid in existing_ids if eid not in edited_ids]
+                        
+                        for del_id in deleted_ids:
+                            aluno_del = db_session.query(Aluno).filter(Aluno.id == del_id).first()
+                            if aluno_del:
+                                db_session.delete(aluno_del)
+                                
+                        db_session.commit()
+                        st.success("✅ Alterações de alunos salvas com sucesso!")
+                        import time
+                        time.sleep(1)
+                        st.rerun()
+                    except Exception as e:
+                        db_session.rollback()
+                        st.error(f"Erro ao salvar: {e}")
                 
     with admin_tab2:
         st.subheader("Cadastro Manual de Usuários")
