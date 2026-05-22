@@ -175,7 +175,7 @@ st.set_page_config(
     page_title="Avaliação de Estudo do Meio",
     page_icon="🎓",
     layout="wide",
-    initial_sidebar_state="expanded"
+    initial_sidebar_state="collapsed"
 )
 
 # Estilização Premium via CSS
@@ -419,16 +419,28 @@ def criar_template_excel(colunas):
         df.to_excel(writer, index=False)
     return output.getvalue()
 
-# Navegação Principal (Banner Superior)
+# Navegação Principal (Banner Superior - Cards)
 st.markdown("<h2 style='text-align: center; color: #1e293b; margin-bottom: 20px;'>SISP - Monitoramento Pedagógico</h2>", unsafe_allow_html=True)
-menu_options = ['📝 Registrar Ocorrência', '📊 Dashboard da Coordenação', '⚙️ Administração']
-selection = st.radio(
-    "Navegação:", 
-    menu_options, 
-    horizontal=True, 
-    label_visibility="collapsed"
-)
-st.markdown("<hr style='margin-top: 0; margin-bottom: 25px;'>", unsafe_allow_html=True)
+
+if 'selection' not in st.session_state:
+    st.session_state.selection = '📝 Registrar Ocorrência'
+
+col_m1, col_m2, col_m3 = st.columns(3)
+with col_m1:
+    if st.button("📝 Registrar Ocorrência", use_container_width=True, type="primary" if st.session_state.selection == '📝 Registrar Ocorrência' else "secondary"):
+        st.session_state.selection = '📝 Registrar Ocorrência'
+        st.rerun()
+with col_m2:
+    if st.button("📊 Dashboard da Coordenação", use_container_width=True, type="primary" if st.session_state.selection == '📊 Dashboard da Coordenação' else "secondary"):
+        st.session_state.selection = '📊 Dashboard da Coordenação'
+        st.rerun()
+with col_m3:
+    if st.button("⚙️ Administração", use_container_width=True, type="primary" if st.session_state.selection == '⚙️ Administração' else "secondary"):
+        st.session_state.selection = '⚙️ Administração'
+        st.rerun()
+
+selection = st.session_state.selection
+st.markdown("<hr style='margin-top: 5px; margin-bottom: 25px;'>", unsafe_allow_html=True)
 
 # Lógica de exibição baseada na seleção
 if selection == '📝 Registrar Ocorrência':
@@ -1488,10 +1500,10 @@ elif selection == '⚙️ Administração':
                         db.rollback()
                         st.error(f"Erro: {e}")
 
-# Rodapé lateral
-st.sidebar.markdown("---")
-st.sidebar.caption("Desenvolvido por cleytonnot-crypto & Antigravity v1.0")
-st.sidebar.caption(
+# Rodapé
+st.markdown("---")
+st.caption("Desenvolvido por cleytonnot-crypto & Antigravity v1.0")
+st.caption(
     "A concepção pedagógica, critérios de avaliação e autoria intelectual do sistema são de cleytonnot-crypto. "
     "A implementação técnica e o refinamento de sintaxe deste sistema contaram com o auxílio de ferramentas de "
     "Inteligência Artificial, seguindo os termos de serviço dos respectivos provedores."
