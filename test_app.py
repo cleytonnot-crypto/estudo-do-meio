@@ -387,4 +387,33 @@ def test_processar_excel_colunas_sinonimos(db_session):
     assert a_db2.viagem_destino == "RJ"
 
 
+def test_obter_rubrica_por_ano():
+    """Testa se a função obter_rubrica_por_ano normaliza e mapeia corretamente as séries."""
+    from app import obter_rubrica_por_ano, RUBRICAS
+
+    # Deve mapear para a rubrica da 2ª série
+    assert obter_rubrica_por_ano("2ª série") == RUBRICAS["2ª série"]
+    assert obter_rubrica_por_ano("2ª SERIE") == RUBRICAS["2ª série"]
+    assert obter_rubrica_por_ano("2 SÉRIE") == RUBRICAS["2ª série"]
+    assert obter_rubrica_por_ano("2EM") == RUBRICAS["2ª série"]
+    assert obter_rubrica_por_ano("2º EM") == RUBRICAS["2ª série"]
+    assert obter_rubrica_por_ano("2ºEM") == RUBRICAS["2ª série"]
+
+    # Deve mapear 3ª série para a rubrica da 2ª série (conforme regra temporária)
+    assert obter_rubrica_por_ano("3ª série") == RUBRICAS["2ª série"]
+    assert obter_rubrica_por_ano("3ª SERIE") == RUBRICAS["2ª série"]
+    assert obter_rubrica_por_ano("3 SÉRIE") == RUBRICAS["2ª série"]
+    assert obter_rubrica_por_ano("3EM") == RUBRICAS["2ª série"]
+    assert obter_rubrica_por_ano("3º EM") == RUBRICAS["2ª série"]
+    assert obter_rubrica_por_ano("3ºEM") == RUBRICAS["2ª série"]
+    assert obter_rubrica_por_ano("3 ano") == RUBRICAS["2ª série"]
+    assert obter_rubrica_por_ano("3º Ano") == RUBRICAS["2ª série"]
+
+    # Deve cair na rubrica Geral (fallback)
+    assert obter_rubrica_por_ano("9º Ano A") == RUBRICAS["Geral"]
+    assert obter_rubrica_por_ano("8º Ano B") == RUBRICAS["Geral"]
+    assert obter_rubrica_por_ano(None) == RUBRICAS["Geral"]
+    assert obter_rubrica_por_ano("") == RUBRICAS["Geral"]
+
+
 

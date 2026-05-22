@@ -471,23 +471,72 @@ if st.query_params.get("feedback") == "abrir":
                 st.query_params.clear()
                 st.rerun()
 
-# Critérios Oficiais de Avaliação
-CRITERIOS_AA = [
-    "Atenção às explicações dos monitores, guias, palestrantes e professores.",
-    "Anotações sempre que possível.",
-    "Registros fotográficos.",
-    "Participação ativa com perguntas e considerações sobre os temas ao longo da viagem.",
-    "Demonstração de interesse e curiosidade pelos espaços visitados e temas discutidos."
-]
+# Dicionário de Rubricas por Série / Tipo (Critérios negativos/infrações)
+RUBRICAS = {
+    "2ª série": {
+        "max_aa": 0.4,
+        "max_cs": 1.6,
+        "AA": [
+            ("Apresenta oscilações pontuais de atenção", 0.2),
+            ("Demonstra desinteresse frequente nas explicações/atividades", 0.4),
+        ],
+        "CS": [
+            ("Apresenta pequenas falhas pontuais no cumprimento de regras/orientações", 0.2),
+            ("Descumpre regras ou necessita intervenções frequentes", 0.4),
+            ("Apresenta atrasos ou desorganização ocasionais com horários e pertences", 0.2),
+            ("Compromete o andamento das atividades por atrasos ou desorganização", 0.4),
+            ("Apresenta dificuldades ocasionais de convivência", 0.2),
+            ("Envolve-se em conflitos, provocações ou atitudes desrespeitosas", 0.4),
+            ("Necessita lembretes pontuais sobre postura nos espaços visitados", 0.2),
+            ("Tem atitudes inadequadas em ambientes institucionais ou públicos", 0.4),
+        ]
+    },
+    "Geral": {
+        "max_aa": 1.0,
+        "max_cs": 1.0,
+        "AA": [
+            ("Falta de atenção ou conversa paralela durante explicações dos monitores/professores", 0.2),
+            ("Falta de empenho ou recusa em realizar anotações e registros solicitados", 0.2),
+            ("Ausência de registros fotográficos de pontos relevantes da visita (quando solicitado)", 0.2),
+            ("Desinteresse geral ou apatia nas atividades e discussões propostas", 0.2),
+            ("Ações dispersivas ou recusa de engajamento com o espaço visitado", 0.2),
+        ],
+        "CS": [
+            ("Falta de respeito ou grosseria com motoristas, guias, professores ou colegas", 0.2),
+            ("Descumpre regras no ônibus (sujeira, levantar-se em movimento, não usar cinto, som alto sem fone)", 0.2),
+            ("Atraso não justificado nos horários de refeição, reuniões ou recolhimento ao quarto", 0.2),
+            ("Uso inadequado, barulho excessivo ou danos nas dependências dos hotéis e visitas", 0.2),
+            ("Uso inadequado do celular em momentos não permitidos", 0.2),
+            ("Quebra de combinados ou desobediência a instruções diretas da equipe", 0.2),
+        ]
+    }
+}
 
-CRITERIOS_CS = [
-    "Respeito aos motoristas, guias, monitores, palestrantes, professores, 'corujas' e demais trabalhadores e colegas.",
-    "Ônibus: limpeza; manter-se sentado; uso do cinto de segurança; música apenas no fone de ouvido.",
-    "Horários e atrasos: café da manhã, almoço, intervalos, recolhimento ao quarto à noite.",
-    "Uso adequado de todas as dependências dos hotéis e demais espaços visitados.",
-    "Uso adequado do celular.",
-    "Respeito aos combinados gerais ao longo da viagem."
-]
+def obter_rubrica_por_ano(ano_aluno):
+    if not ano_aluno:
+        return RUBRICAS["Geral"]
+    ano_clean = str(ano_aluno).strip().upper()
+    # Mapeamento para 2ª série (Ensino Médio)
+    if any(x in ano_clean for x in ["2ª SÉRIE", "2ª SERIE", "2 SÉRIE", "2 SERIE", "2EM", "2º EM", "2ºEM"]):
+        return RUBRICAS["2ª série"]
+    # Se for 3ª série (que por enquanto usa a mesma rubrica do "3 ano"/2ª série, conforme informado):
+    if any(x in ano_clean for x in ["3ª SÉRIE", "3ª SERIE", "3 SÉRIE", "3 SERIE", "3EM", "3º EM", "3ºEM", "3 ANO", "3º ANO"]):
+        return RUBRICAS["2ª série"]
+    return RUBRICAS["Geral"]
+
+# Unir todos os critérios de todas as rubricas para a filtragem no dashboard
+TODOS_CRITERIOS = []
+for r_name, r_val in RUBRICAS.items():
+    for crit, _ in r_val["AA"]:
+        if crit not in TODOS_CRITERIOS:
+            TODOS_CRITERIOS.append(crit)
+    for crit, _ in r_val["CS"]:
+        if crit not in TODOS_CRITERIOS:
+            TODOS_CRITERIOS.append(crit)
+
+CRITERIOS_AA = [crit for crit, _ in RUBRICAS["Geral"]["AA"]]
+CRITERIOS_CS = [crit for crit, _ in RUBRICAS["Geral"]["CS"]]
+
 
 # Helper context manager para sessões do SQLAlchemy
 @contextmanager
@@ -643,6 +692,9 @@ if selection == '📝 Registrar Ocorrência':
                 with get_db() as db:
                     aluno_obj = db.query(Aluno).filter(Aluno.id == aluno_id).first()
                     
+                # Obter a rubrica dinamicamente baseada no ano/série do aluno
+                rubrica_aluno = obter_rubrica_por_ano(aluno_obj.ano)
+                
                 st.markdown(f"""
                 <div class="custom-card">
                     <h4 style="margin: 0; color: #6366f1; font-size: 1.1rem;">🎓 {aluno_obj.nome}</h4>
@@ -664,13 +716,13 @@ if selection == '📝 Registrar Ocorrência':
                         st.caption("Selecione as ocorrências e quantos pontos o aluno perde:")
                         aa_selecionados = []
                         total_desconto_aa = 0.0
-                        for crit in CRITERIOS_AA:
+                        for crit, desc_padrao in rubrica_aluno["AA"]:
                             col_c, col_n = st.columns([4, 1])
                             with col_c:
                                 marcado = st.checkbox(crit, key=f"aa_{crit}")
                             with col_n:
                                 if marcado:
-                                    desc = st.number_input("Pts", min_value=0.0, max_value=1.0, step=0.1, key=f"desc_aa_{crit}", label_visibility="collapsed")
+                                    desc = st.number_input("Pts", min_value=0.0, max_value=1.0, value=desc_padrao, step=0.1, key=f"desc_aa_{crit}", label_visibility="collapsed")
                                     aa_selecionados.append(crit)
                                     total_desconto_aa += desc
                                     
@@ -678,13 +730,13 @@ if selection == '📝 Registrar Ocorrência':
                         st.caption("Selecione as ocorrências e quantos pontos o aluno perde:")
                         cs_selecionados = []
                         total_desconto_cs = 0.0
-                        for crit in CRITERIOS_CS:
+                        for crit, desc_padrao in rubrica_aluno["CS"]:
                             col_c, col_n = st.columns([4, 1])
                             with col_c:
                                 marcado = st.checkbox(crit, key=f"cs_{crit}")
                             with col_n:
                                 if marcado:
-                                    desc = st.number_input("Pts", min_value=0.0, max_value=1.0, step=0.1, key=f"desc_cs_{crit}", label_visibility="collapsed")
+                                    desc = st.number_input("Pts", min_value=0.0, max_value=1.0, value=desc_padrao, step=0.1, key=f"desc_cs_{crit}", label_visibility="collapsed")
                                     cs_selecionados.append(crit)
                                     total_desconto_cs += desc
                                 
@@ -791,15 +843,21 @@ elif selection == '📊 Dashboard':
                 total_desc_aa = df_aluno["Desconto_AA"].sum()
                 total_desc_cs = df_aluno["Desconto_CS"].sum()
                 
-                nota_aa = max(0.0, 1.0 - total_desc_aa)
-                nota_cs = max(0.0, 1.0 - total_desc_cs)
+                # Obter a rubrica dinamicamente baseada no ano/série do aluno
+                ano_aluno = df_aluno["Ano/Turma"].iloc[0] if not df_aluno.empty else None
+                rubrica_aluno = obter_rubrica_por_ano(ano_aluno)
+                max_aa = rubrica_aluno["max_aa"]
+                max_cs = rubrica_aluno["max_cs"]
+                
+                nota_aa = max(0.0, max_aa - total_desc_aa)
+                nota_cs = max(0.0, max_cs - total_desc_cs)
                 
                 col_ex1, col_ex2 = st.columns(2)
                 with col_ex1:
                     st.markdown(f'''
                     <div class="custom-card" style="border-left-color: #6366f1; text-align: center; padding: 20px;">
                         <h4 style="margin: 0; color: #64748b; font-weight: normal;">Nota Final AA</h4>
-                        <h1 style="margin: 5px 0 0 0; color: #6366f1; font-size: 3rem;">{nota_aa:.1f}</h1>
+                        <h1 style="margin: 5px 0 0 0; color: #6366f1; font-size: 3rem;">{nota_aa:.1f} <span style="font-size: 1.5rem; color: #94a3b8;">/ {max_aa:.1f}</span></h1>
                         <p style="margin: 5px 0 0 0; color: #ef4444; font-size: 0.9rem;">Pontos perdidos: -{total_desc_aa:.1f}</p>
                     </div>
                     ''', unsafe_allow_html=True)
@@ -807,7 +865,7 @@ elif selection == '📊 Dashboard':
                     st.markdown(f'''
                     <div class="custom-card" style="border-left-color: #10b981; text-align: center; padding: 20px;">
                         <h4 style="margin: 0; color: #64748b; font-weight: normal;">Nota Final CS</h4>
-                        <h1 style="margin: 5px 0 0 0; color: #10b981; font-size: 3rem;">{nota_cs:.1f}</h1>
+                        <h1 style="margin: 5px 0 0 0; color: #10b981; font-size: 3rem;">{nota_cs:.1f} <span style="font-size: 1.5rem; color: #94a3b8;">/ {max_cs:.1f}</span></h1>
                         <p style="margin: 5px 0 0 0; color: #ef4444; font-size: 0.9rem;">Pontos perdidos: -{total_desc_cs:.1f}</p>
                     </div>
                     ''', unsafe_allow_html=True)
@@ -944,7 +1002,7 @@ elif selection == '📊 Dashboard':
             with col_criterios:
                 criterios_selecionados = st.multiselect(
                     "Filtro por Critério do Regulamento (AA / CS):",
-                    options=CRITERIOS_AA + CRITERIOS_CS,
+                    options=TODOS_CRITERIOS,
                     placeholder="Selecione um ou mais critérios..."
                 )
             with col_busca_ra:
