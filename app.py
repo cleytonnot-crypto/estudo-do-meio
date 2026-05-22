@@ -52,6 +52,8 @@ def limpar_nome(val):
 
 def processar_excel_professores(df, db):
     df.columns = [normalizar_coluna(col) for col in df.columns]
+    if 'viagem_destino' in df.columns and 'viagem' not in df.columns:
+        df = df.rename(columns={'viagem_destino': 'viagem'})
     expected = ['nome', 'email', 'viagem']
     if not all(col in df.columns for col in expected):
         raise ValueError(f"O arquivo deve conter as colunas: {expected}")
@@ -106,6 +108,8 @@ def processar_excel_professores(df, db):
 
 def processar_excel_alunos(df, db):
     df.columns = [normalizar_coluna(col) for col in df.columns]
+    if 'viagem' in df.columns and 'viagem_destino' not in df.columns:
+        df = df.rename(columns={'viagem': 'viagem_destino'})
     expected = ['nome', 'ra', 'email', 'ano', 'viagem_destino']
     if not all(col in df.columns for col in expected):
         raise ValueError(f"O arquivo deve conter as colunas: {expected}")
@@ -967,23 +971,42 @@ elif selection == '⚙️ Administração':
             
             uploaded_p_file = st.file_uploader("Upload da Lista de Professores", type=['xlsx'], key='up_prof_p')
             if uploaded_p_file:
-                file_key = f"processed_prof_{uploaded_p_file.name}_{uploaded_p_file.size}"
-                if file_key not in st.session_state:
-                    try:
-                        df = pd.read_excel(uploaded_p_file)
-                        with get_db() as db:
-                            count, duplicates_skipped = processar_excel_professores(df, db)
-                        st.session_state[file_key] = (count, duplicates_skipped)
-                        st.rerun()
-                    except Exception as e:
-                        st.error(f"Erro ao processar: {e}")
-                
-                if file_key in st.session_state:
-                    count, duplicates_skipped = st.session_state[file_key]
-                    if duplicates_skipped > 0:
-                        st.success(f"✅ {count} novos professores cadastrados com sucesso! ({duplicates_skipped} registros duplicados foram ignorados)")
+                try:
+                    xls_p = pd.ExcelFile(uploaded_p_file)
+                    sheet_names_p = xls_p.sheet_names
+                    if len(sheet_names_p) > 1:
+                        selected_sheet_p = st.selectbox(
+                            "Selecione a aba (planilha) dos Professores:", 
+                            sheet_names_p, 
+                            key='sheet_prof_sel'
+                        )
+                        btn_import = st.button("Confirmar e Importar Planilha", key="btn_import_prof")
                     else:
-                        st.success(f"✅ {count} novos professores cadastrados!")
+                        selected_sheet_p = sheet_names_p[0]
+                        btn_import = True
+                        
+                    file_key = f"processed_prof_{uploaded_p_file.name}_{uploaded_p_file.size}_{selected_sheet_p}"
+                    if file_key not in st.session_state:
+                        if btn_import:
+                            try:
+                                df = pd.read_excel(uploaded_p_file, sheet_name=selected_sheet_p)
+                                with get_db() as db:
+                                    count, duplicates_skipped = processar_excel_professores(df, db)
+                                st.session_state[file_key] = (count, duplicates_skipped)
+                                st.rerun()
+                            except Exception as e:
+                                st.error(f"Erro ao processar: {e}")
+                        else:
+                            st.info("Clique no botão acima para confirmar a importação da aba selecionada.")
+                    
+                    if file_key in st.session_state:
+                        count, duplicates_skipped = st.session_state[file_key]
+                        if duplicates_skipped > 0:
+                            st.success(f"✅ {count} novos professores cadastrados com sucesso! ({duplicates_skipped} registros duplicados foram ignorados)")
+                        else:
+                            st.success(f"✅ {count} novos professores cadastrados!")
+                except Exception as e:
+                    st.error(f"Erro ao ler arquivo Excel: {e}")
                     
         with col_import_a:
             st.markdown("#### 🎓 Importação de Alunos")
@@ -998,23 +1021,42 @@ elif selection == '⚙️ Administração':
             
             uploaded_a_file = st.file_uploader("Upload da Lista de Alunos", type=['xlsx'], key='up_aluno_a')
             if uploaded_a_file:
-                file_key = f"processed_aluno_{uploaded_a_file.name}_{uploaded_a_file.size}"
-                if file_key not in st.session_state:
-                    try:
-                        df = pd.read_excel(uploaded_a_file)
-                        with get_db() as db:
-                            count, duplicates_skipped = processar_excel_alunos(df, db)
-                        st.session_state[file_key] = (count, duplicates_skipped)
-                        st.rerun()
-                    except Exception as e:
-                        st.error(f"Erro ao processar: {e}")
-                
-                if file_key in st.session_state:
-                    count, duplicates_skipped = st.session_state[file_key]
-                    if duplicates_skipped > 0:
-                        st.success(f"✅ {count} novos alunos cadastrados com sucesso! ({duplicates_skipped} registros duplicados ou inválidos foram ignorados)")
+                try:
+                    xls_a = pd.ExcelFile(uploaded_a_file)
+                    sheet_names_a = xls_a.sheet_names
+                    if len(sheet_names_a) > 1:
+                        selected_sheet_a = st.selectbox(
+                            "Selecione a aba (planilha) dos Alunos:", 
+                            sheet_names_a, 
+                            key='sheet_aluno_sel'
+                        )
+                        btn_import = st.button("Confirmar e Importar Planilha", key="btn_import_aluno")
                     else:
-                        st.success(f"✅ {count} novos alunos cadastrados!")
+                        selected_sheet_a = sheet_names_a[0]
+                        btn_import = True
+                        
+                    file_key = f"processed_aluno_{uploaded_a_file.name}_{uploaded_a_file.size}_{selected_sheet_a}"
+                    if file_key not in st.session_state:
+                        if btn_import:
+                            try:
+                                df = pd.read_excel(uploaded_a_file, sheet_name=selected_sheet_a)
+                                with get_db() as db:
+                                    count, duplicates_skipped = processar_excel_alunos(df, db)
+                                st.session_state[file_key] = (count, duplicates_skipped)
+                                st.rerun()
+                            except Exception as e:
+                                st.error(f"Erro ao processar: {e}")
+                        else:
+                            st.info("Clique no botão acima para confirmar a importação da aba selecionada.")
+                    
+                    if file_key in st.session_state:
+                        count, duplicates_skipped = st.session_state[file_key]
+                        if duplicates_skipped > 0:
+                            st.success(f"✅ {count} novos alunos cadastrados com sucesso! ({duplicates_skipped} registros duplicados ou inválidos foram ignorados)")
+                        else:
+                            st.success(f"✅ {count} novos alunos cadastrados!")
+                except Exception as e:
+                    st.error(f"Erro ao ler arquivo Excel: {e}")
                     
     with admin_tab4:
         st.subheader("💬 Feedbacks, Erros e Sugestões Reportados")

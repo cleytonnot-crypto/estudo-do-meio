@@ -326,3 +326,65 @@ def test_processar_excel_professores_sem_coluna_onibus(db_session):
     assert prof_db.onibus == "Ônibus Original"
 
 
+def test_processar_excel_colunas_sinonimos(db_session):
+    """Testa se os sinônimos de coluna ('destino', 'viagem_destino', 'viagem') são normalizados/renomeados corretamente."""
+    import pandas as pd
+    from app import processar_excel_professores, processar_excel_alunos
+    from database import Professor, Aluno
+    
+    # 1. Professores com coluna "destino" e "viagem_destino"
+    data_prof_destino = {
+        "nome": ["Prof Destino"],
+        "email": ["prof.destino@escola.com.br"],
+        "Destino": ["MG"]
+    }
+    df_prof_destino = pd.DataFrame(data_prof_destino)
+    count, dup = processar_excel_professores(df_prof_destino, db_session)
+    assert count == 1
+    p_db = db_session.query(Professor).filter(Professor.email == "prof.destino@escola.com.br").first()
+    assert p_db is not None
+    assert p_db.viagem == "MG"
+
+    data_prof_viagem_destino = {
+        "nome": ["Prof Viagem Destino"],
+        "email": ["prof.vdestino@escola.com.br"],
+        "viagem_destino": ["RJ"]
+    }
+    df_prof_viagem_destino = pd.DataFrame(data_prof_viagem_destino)
+    count, dup = processar_excel_professores(df_prof_viagem_destino, db_session)
+    assert count == 1
+    p_db2 = db_session.query(Professor).filter(Professor.email == "prof.vdestino@escola.com.br").first()
+    assert p_db2 is not None
+    assert p_db2.viagem == "RJ"
+
+    # 2. Alunos com coluna "destino" e "viagem"
+    data_aluno_destino = {
+        "nome": ["Aluno Destino"],
+        "ra": ["111222"],
+        "email": ["aluno.destino@escola.com.br"],
+        "ano": ["9º Ano A"],
+        "Destino": ["MG"]
+    }
+    df_aluno_destino = pd.DataFrame(data_aluno_destino)
+    count, dup = processar_excel_alunos(df_aluno_destino, db_session)
+    assert count == 1
+    a_db = db_session.query(Aluno).filter(Aluno.ra == "111222").first()
+    assert a_db is not None
+    assert a_db.viagem_destino == "MG"
+
+    data_aluno_viagem = {
+        "nome": ["Aluno Viagem"],
+        "ra": ["222333"],
+        "email": ["aluno.viagem@escola.com.br"],
+        "ano": ["9º Ano B"],
+        "viagem": ["RJ"]
+    }
+    df_aluno_viagem = pd.DataFrame(data_aluno_viagem)
+    count, dup = processar_excel_alunos(df_aluno_viagem, db_session)
+    assert count == 1
+    a_db2 = db_session.query(Aluno).filter(Aluno.ra == "222333").first()
+    assert a_db2 is not None
+    assert a_db2.viagem_destino == "RJ"
+
+
+
