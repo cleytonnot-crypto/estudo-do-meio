@@ -652,6 +652,14 @@ if selection == '📝 Registrar Ocorrência':
             if "professor_logado_id" not in st.session_state:
                 st.session_state.professor_logado_id = None
                 
+            # Verifica "cache" na URL (Auto-Login)
+            if st.session_state.professor_logado_id is None and "prof_email" in st.query_params:
+                email_cache = st.query_params["prof_email"]
+                with get_db() as db:
+                    prof_cache = db.query(Professor).filter(func.lower(Professor.email) == func.lower(email_cache)).first()
+                    if prof_cache:
+                        st.session_state.professor_logado_id = prof_cache.id
+
             if st.session_state.professor_logado_id is None:
                 st.markdown("### 1. Acesso do Professor")
                 st.info("Para registrar ocorrências, faça login com o seu e-mail cadastrado.")
@@ -668,7 +676,10 @@ if selection == '📝 Registrar Ocorrência':
                                 prof = db.query(Professor).filter(func.lower(Professor.email) == func.lower(email_digitado.strip())).first()
                                 if prof:
                                     st.session_state.professor_logado_id = prof.id
+                                    st.query_params["prof_email"] = prof.email.lower()
                                     st.success(f"Bem-vindo(a), {prof.nome}!")
+                                    import time
+                                    time.sleep(0.5)
                                     st.rerun()
                                 else:
                                     st.error("E-mail não encontrado no sistema. Verifique a digitação ou contate a administração.")
@@ -684,6 +695,8 @@ if selection == '📝 Registrar Ocorrência':
                 prof_obj = db.query(Professor).filter(Professor.id == professor_id).first()
                 if prof_obj is None:
                     st.session_state.professor_logado_id = None
+                    if "prof_email" in st.query_params:
+                        del st.query_params["prof_email"]
                     st.rerun()
                     
                 if st.session_state.professor_logado_id is not None:
@@ -694,6 +707,8 @@ if selection == '📝 Registrar Ocorrência':
                     with col_btn:
                         if st.button("Sair", use_container_width=True):
                             st.session_state.professor_logado_id = None
+                            if "prof_email" in st.query_params:
+                                del st.query_params["prof_email"]
                             st.rerun()
 
                 prof_viagem = prof_obj.viagem
