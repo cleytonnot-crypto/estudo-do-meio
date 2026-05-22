@@ -419,10 +419,16 @@ def criar_template_excel(colunas):
         df.to_excel(writer, index=False)
     return output.getvalue()
 
-# Navegação Lateral
-st.sidebar.title("📌 Menu Principal")
+# Navegação Principal (Banner Superior)
+st.markdown("<h2 style='text-align: center; color: #1e293b; margin-bottom: 20px;'>SISP - Monitoramento Pedagógico</h2>", unsafe_allow_html=True)
 menu_options = ['📝 Registrar Ocorrência', '📊 Dashboard da Coordenação', '⚙️ Administração']
-selection = st.sidebar.radio("Navegue pelas seções:", menu_options)
+selection = st.radio(
+    "Navegação:", 
+    menu_options, 
+    horizontal=True, 
+    label_visibility="collapsed"
+)
+st.markdown("<hr style='margin-top: 0; margin-bottom: 25px;'>", unsafe_allow_html=True)
 
 # Lógica de exibição baseada na seleção
 if selection == '📝 Registrar Ocorrência':
@@ -619,15 +625,16 @@ elif selection == '📊 Dashboard da Coordenação':
     perc_alunos = (alunos_com_ocorrencia / total_alunos * 100) if total_alunos > 0 else 0.0
     
     # KPIs com Cards Estilizados
-    col1, col2, col3, col4 = st.columns(4)
-    with col1:
-        st.markdown(f'<div class="metric-card"><div class="metric-title">Total Alunos</div><div class="metric-value">{total_alunos}</div></div>', unsafe_allow_html=True)
-    with col2:
-        st.markdown(f'<div class="metric-card" style="border-left-color: #10b981;"><div class="metric-title">Total Professores</div><div class="metric-value">{total_profs}</div></div>', unsafe_allow_html=True)
-    with col3:
-        st.markdown(f'<div class="metric-card" style="border-left-color: #f59e0b;"><div class="metric-title">Total Ocorrências</div><div class="metric-value">{total_ocorrencias}</div></div>', unsafe_allow_html=True)
-    with col4:
-        st.markdown(f'<div class="metric-card" style="border-left-color: #ec4899;"><div class="metric-title">Alunos Avaliados (%)</div><div class="metric-value">{perc_alunos:.1f}%</div></div>', unsafe_allow_html=True)
+    with st.container(border=True):
+        col1, col2, col3, col4 = st.columns(4)
+        with col1:
+            st.markdown(f'<div class="metric-card"><div class="metric-title">Total Alunos</div><div class="metric-value">{total_alunos}</div></div>', unsafe_allow_html=True)
+        with col2:
+            st.markdown(f'<div class="metric-card" style="border-left-color: #10b981;"><div class="metric-title">Total Professores</div><div class="metric-value">{total_profs}</div></div>', unsafe_allow_html=True)
+        with col3:
+            st.markdown(f'<div class="metric-card" style="border-left-color: #f59e0b;"><div class="metric-title">Total Ocorrências</div><div class="metric-value">{total_ocorrencias}</div></div>', unsafe_allow_html=True)
+        with col4:
+            st.markdown(f'<div class="metric-card" style="border-left-color: #ec4899;"><div class="metric-title">Alunos Avaliados (%)</div><div class="metric-value">{perc_alunos:.1f}%</div></div>', unsafe_allow_html=True)
         
     df_oco = carregar_dados_coordenacao()
     
@@ -637,274 +644,279 @@ elif selection == '📊 Dashboard da Coordenação':
         st.markdown("---")
         
         # Extrato Individual do Aluno
-        st.markdown("### 🔎 Extrato e Pontuação do Aluno")
-        alunos_unicos = sorted(list(df_oco["Aluno"].unique()))
-        aluno_extrato = st.selectbox(
-            "Selecione um aluno para ver a nota calculada:", 
-            options=["-- Selecione --"] + alunos_unicos,
-            index=0,
-            placeholder="Digite o nome do aluno..."
-        )
-        
-        if aluno_extrato != "-- Selecione --":
-            df_aluno = df_oco[df_oco["Aluno"] == aluno_extrato]
-            total_desc_aa = df_aluno["Desconto_AA"].sum()
-            total_desc_cs = df_aluno["Desconto_CS"].sum()
+        with st.container(border=True):
+            st.markdown("### 🔎 Extrato e Pontuação do Aluno")
+            alunos_unicos = sorted(list(df_oco["Aluno"].unique()))
+            aluno_extrato = st.selectbox(
+                "Selecione um aluno para ver a nota calculada:", 
+                options=["-- Selecione --"] + alunos_unicos,
+                index=0,
+                placeholder="Digite o nome do aluno..."
+            )
             
-            nota_aa = max(0.0, 1.0 - total_desc_aa)
-            nota_cs = max(0.0, 1.0 - total_desc_cs)
-            
-            col_ex1, col_ex2 = st.columns(2)
-            with col_ex1:
-                st.markdown(f'''
-                <div class="custom-card" style="border-left-color: #6366f1; text-align: center; padding: 20px;">
-                    <h4 style="margin: 0; color: #64748b; font-weight: normal;">Nota Final AA</h4>
-                    <h1 style="margin: 5px 0 0 0; color: #6366f1; font-size: 3rem;">{nota_aa:.1f}</h1>
-                    <p style="margin: 5px 0 0 0; color: #ef4444; font-size: 0.9rem;">Pontos perdidos: -{total_desc_aa:.1f}</p>
-                </div>
-                ''', unsafe_allow_html=True)
-            with col_ex2:
-                st.markdown(f'''
-                <div class="custom-card" style="border-left-color: #10b981; text-align: center; padding: 20px;">
-                    <h4 style="margin: 0; color: #64748b; font-weight: normal;">Nota Final CS</h4>
-                    <h1 style="margin: 5px 0 0 0; color: #10b981; font-size: 3rem;">{nota_cs:.1f}</h1>
-                    <p style="margin: 5px 0 0 0; color: #ef4444; font-size: 0.9rem;">Pontos perdidos: -{total_desc_cs:.1f}</p>
-                </div>
-                ''', unsafe_allow_html=True)
+            if aluno_extrato != "-- Selecione --":
+                df_aluno = df_oco[df_oco["Aluno"] == aluno_extrato]
+                total_desc_aa = df_aluno["Desconto_AA"].sum()
+                total_desc_cs = df_aluno["Desconto_CS"].sum()
                 
-            st.caption(f"**{aluno_extrato}** possui **{len(df_aluno)}** ocorrência(s) registrada(s).")
-            st.markdown("---")
+                nota_aa = max(0.0, 1.0 - total_desc_aa)
+                nota_cs = max(0.0, 1.0 - total_desc_cs)
+                
+                col_ex1, col_ex2 = st.columns(2)
+                with col_ex1:
+                    st.markdown(f'''
+                    <div class="custom-card" style="border-left-color: #6366f1; text-align: center; padding: 20px;">
+                        <h4 style="margin: 0; color: #64748b; font-weight: normal;">Nota Final AA</h4>
+                        <h1 style="margin: 5px 0 0 0; color: #6366f1; font-size: 3rem;">{nota_aa:.1f}</h1>
+                        <p style="margin: 5px 0 0 0; color: #ef4444; font-size: 0.9rem;">Pontos perdidos: -{total_desc_aa:.1f}</p>
+                    </div>
+                    ''', unsafe_allow_html=True)
+                with col_ex2:
+                    st.markdown(f'''
+                    <div class="custom-card" style="border-left-color: #10b981; text-align: center; padding: 20px;">
+                        <h4 style="margin: 0; color: #64748b; font-weight: normal;">Nota Final CS</h4>
+                        <h1 style="margin: 5px 0 0 0; color: #10b981; font-size: 3rem;">{nota_cs:.1f}</h1>
+                        <p style="margin: 5px 0 0 0; color: #ef4444; font-size: 0.9rem;">Pontos perdidos: -{total_desc_cs:.1f}</p>
+                    </div>
+                    ''', unsafe_allow_html=True)
+                    
+                st.caption(f"**{aluno_extrato}** possui **{len(df_aluno)}** ocorrência(s) registrada(s).")
             
         # Gráficos em Colunas
-        col_g1, col_g2 = st.columns(2)
-        with col_g1:
-            st.subheader("🚌 Ocorrências por Veículo (Ônibus)")
-            df_onibus = df_oco["Ônibus"].value_counts().reset_index()
-            df_onibus.columns = ["Ônibus", "Registros"]
-            st.bar_chart(df_onibus.set_index("Ônibus"), color="#3b82f6")
-            
-        with col_g2:
-            st.subheader("📍 Ocorrências por Destino")
-            df_destino = df_oco["Destino"].value_counts().reset_index()
-            df_destino.columns = ["Destino", "Registros"]
-            st.bar_chart(df_destino.set_index("Destino"), color="#10b981")
-            
-        col_g3, col_g4 = st.columns(2)
-        with col_g3:
-            st.subheader("🎓 Ocorrências por Turma/Série")
-            df_turma = df_oco["Ano/Turma"].value_counts().reset_index()
-            df_turma.columns = ["Ano/Turma", "Registros"]
-            st.bar_chart(df_turma.set_index("Ano/Turma"), color="#8b5cf6")
-            
-        with col_g4:
-            st.subheader("👨‍🏫 Ocorrências por Professor")
-            df_prof = df_oco["Registrado por"].value_counts().reset_index()
-            df_prof.columns = ["Professor", "Registros"]
-            st.bar_chart(df_prof.set_index("Professor"), color="#ec4899")
-            
-        st.subheader("📈 Volume de Registros por Dia")
-        df_oco_data = df_oco.copy()
-        df_oco_data["Data"] = pd.to_datetime(df_oco_data["data_hora_raw"]).dt.date
-        df_datas = df_oco_data.groupby("Data").size().reset_index(name="Registros")
-        st.line_chart(df_datas.set_index("Data"), color="#f59e0b")
-        
-        st.markdown("---")
+        with st.container(border=True):
+            st.markdown("### 📊 Gráficos de Monitoramento")
+            col_g1, col_g2 = st.columns(2)
+            with col_g1:
+                st.markdown("**🚌 Ocorrências por Veículo (Ônibus)**")
+                df_onibus = df_oco["Ônibus"].value_counts().reset_index()
+                df_onibus.columns = ["Ônibus", "Registros"]
+                st.bar_chart(df_onibus.set_index("Ônibus"), color="#3b82f6")
+                
+            with col_g2:
+                st.markdown("**📍 Ocorrências por Destino**")
+                df_destino = df_oco["Destino"].value_counts().reset_index()
+                df_destino.columns = ["Destino", "Registros"]
+                st.bar_chart(df_destino.set_index("Destino"), color="#10b981")
+                
+            st.divider()
+                
+            col_g3, col_g4 = st.columns(2)
+            with col_g3:
+                st.markdown("**🎓 Ocorrências por Turma/Série**")
+                df_turma = df_oco["Ano/Turma"].value_counts().reset_index()
+                df_turma.columns = ["Ano/Turma", "Registros"]
+                st.bar_chart(df_turma.set_index("Ano/Turma"), color="#8b5cf6")
+                
+            with col_g4:
+                st.markdown("**👨‍🏫 Ocorrências por Professor**")
+                df_prof = df_oco["Registrado por"].value_counts().reset_index()
+                df_prof.columns = ["Professor", "Registros"]
+                st.bar_chart(df_prof.set_index("Professor"), color="#ec4899")
+                
+            st.divider()
+                
+            st.markdown("**📈 Volume de Registros por Dia**")
+            df_oco_data = df_oco.copy()
+            df_oco_data["Data"] = pd.to_datetime(df_oco_data["data_hora_raw"]).dt.date
+            df_datas = df_oco_data.groupby("Data").size().reset_index(name="Registros")
+            st.line_chart(df_datas.set_index("Data"), color="#f59e0b")
         
         # Ranking de Ocorrências (Mais frequentes de AA e CS)
-        all_aa = []
-        all_cs = []
-        for _, row in df_oco.iterrows():
-            if row["Atitudes (AA)"]:
-                all_aa.extend([x.strip() for x in row["Atitudes (AA)"].split(";") if x.strip()])
-            if row["Comportamento (CS)"]:
-                all_cs.extend([x.strip() for x in row["Comportamento (CS)"].split(";") if x.strip()])
-                
-        st.subheader("📊 Frequência por Critério de Regulamento")
-        col_r1, col_r2 = st.columns(2)
-        
-        with col_r1:
-            st.markdown("**🚨 Atitude Frente à Aprendizagem (AA)**")
-            if all_aa:
-                df_aa_counts = pd.Series(all_aa).value_counts().reset_index()
-                df_aa_counts.columns = ["Critério", "Frequência"]
-                st.dataframe(df_aa_counts, use_container_width=True, hide_index=True)
-            else:
-                st.caption("Nenhum critério AA registrado ainda.")
-                
-        with col_r2:
-            st.markdown("**🚨 Comportamento Social (CS)**")
-            if all_cs:
-                df_cs_counts = pd.Series(all_cs).value_counts().reset_index()
-                df_cs_counts.columns = ["Critério", "Frequência"]
-                st.dataframe(df_cs_counts, use_container_width=True, hide_index=True)
-            else:
-                st.caption("Nenhum critério CS registrado ainda.")
-                
-        st.markdown("---")
-        
-        st.subheader("🏆 Ranking de Alunos com Mais Ocorrências Registradas")
-        if not df_oco.empty:
-            df_ranking = df_oco.groupby(["Aluno", "RA", "Ônibus", "Destino"]).size().reset_index(name="Total Ocorrências")
-            df_ranking = df_ranking.sort_values(by="Total Ocorrências", ascending=False).reset_index(drop=True)
-            df_ranking.index = df_ranking.index + 1  # 1-indexed
-            df_ranking = df_ranking.reset_index().rename(columns={"index": "Posição"})
-            st.dataframe(df_ranking, use_container_width=True, hide_index=True)
-        else:
-            st.caption("Nenhum registro no ranking.")
+        with st.container(border=True):
+            st.markdown("### 🏆 Rankings e Frequências")
+            all_aa = []
+            all_cs = []
+            for _, row in df_oco.iterrows():
+                if row["Atitudes (AA)"]:
+                    all_aa.extend([x.strip() for x in row["Atitudes (AA)"].split(";") if x.strip()])
+                if row["Comportamento (CS)"]:
+                    all_cs.extend([x.strip() for x in row["Comportamento (CS)"].split(";") if x.strip()])
+                    
+            st.markdown("**📊 Frequência por Critério de Regulamento**")
+            col_r1, col_r2 = st.columns(2)
             
-        st.markdown("---")
+            with col_r1:
+                st.markdown("*Atitude Frente à Aprendizagem (AA)*")
+                if all_aa:
+                    df_aa_counts = pd.Series(all_aa).value_counts().reset_index()
+                    df_aa_counts.columns = ["Critério", "Frequência"]
+                    st.dataframe(df_aa_counts, use_container_width=True, hide_index=True)
+                else:
+                    st.caption("Nenhum critério AA registrado ainda.")
+                    
+            with col_r2:
+                st.markdown("*Comportamento Social (CS)*")
+                if all_cs:
+                    df_cs_counts = pd.Series(all_cs).value_counts().reset_index()
+                    df_cs_counts.columns = ["Critério", "Frequência"]
+                    st.dataframe(df_cs_counts, use_container_width=True, hide_index=True)
+                else:
+                    st.caption("Nenhum critério CS registrado ainda.")
+                    
+            st.divider()
+            
+            st.markdown("**🏆 Alunos com Mais Ocorrências Registradas**")
+            if not df_oco.empty:
+                df_ranking = df_oco.groupby(["Aluno", "RA", "Ônibus", "Destino"]).size().reset_index(name="Total Ocorrências")
+                df_ranking = df_ranking.sort_values(by="Total Ocorrências", ascending=False).reset_index(drop=True)
+                df_ranking.index = df_ranking.index + 1  # 1-indexed
+                df_ranking = df_ranking.reset_index().rename(columns={"index": "Posição"})
+                st.dataframe(df_ranking, use_container_width=True, hide_index=True)
+            else:
+                st.caption("Nenhum registro no ranking.")
         
         # Filtros Avançados & Histórico
-        st.subheader("🔍 Histórico e Filtros do Relatório")
-        
-        col_filtro_onibus, col_filtro_destino, col_filtro_prof, col_filtro_ano = st.columns(4)
-        with col_filtro_onibus:
-            lista_onibus = ["Todos"] + sorted(list(df_oco["Ônibus"].unique()))
-            f_onibus = st.selectbox("Filtro por Ônibus:", lista_onibus)
-        with col_filtro_destino:
-            lista_destinos = ["Todos"] + sorted(list(df_oco["Destino"].unique()))
-            f_destino = st.selectbox("Filtro por Destino:", lista_destinos)
-        with col_filtro_prof:
-            lista_profs = ["Todos"] + sorted(list(df_oco["Registrado por"].unique()))
-            f_prof = st.selectbox("Filtro por Professor:", lista_profs)
-        with col_filtro_ano:
-            lista_anos = ["Todos"] + sorted(list(df_oco["Ano/Turma"].unique()))
-            f_ano = st.selectbox("Filtro por Ano/Turma:", lista_anos)
-            
-        col_cat, col_datas, col_ordem = st.columns(3)
-        with col_cat:
-            f_categoria = st.selectbox("Filtrar por Categoria:", ["Todas", "Apenas Atitude (AA)", "Apenas Comportamento (CS)"])
-        with col_datas:
-            # Pega as datas mínima e máxima reais para definir o range
-            min_dt = df_oco["data_hora_raw"].min().date()
-            max_dt = df_oco["data_hora_raw"].max().date()
-            
-            datas_sel = st.date_input(
-                "Filtro por Período / Data:",
-                value=(min_dt, max_dt),
-                min_value=min_dt - pd.Timedelta(days=30),
-                max_value=max_dt + pd.Timedelta(days=30)
-            )
-        with col_ordem:
-            f_ordem = st.selectbox(
-                "Ordenar resultados por:",
-                [
-                    "Mais Recentes Primeiro",
-                    "Mais Antigos Primeiro",
-                    "Aluno (A-Z)",
-                    "Professor (A-Z)"
-                ]
-            )
-            
-        col_criterios, col_busca_ra = st.columns([2, 1])
-        with col_criterios:
-            criterios_selecionados = st.multiselect(
-                "Filtro por Critério do Regulamento (AA / CS):",
-                options=CRITERIOS_AA + CRITERIOS_CS,
-                placeholder="Selecione um ou mais critérios..."
-            )
-        with col_busca_ra:
-            busca = st.text_input("🔍 Buscar por Nome do Aluno ou RA:")
-        
-        # Aplica filtros dinamicamente
-        df_filtrado = df_oco.copy()
-        if f_onibus != "Todos":
-            df_filtrado = df_filtrado[df_filtrado["Ônibus"] == f_onibus]
-        if f_destino != "Todos":
-            df_filtrado = df_filtrado[df_filtrado["Destino"] == f_destino]
-        if f_prof != "Todos":
-            df_filtrado = df_filtrado[df_filtrado["Registrado por"] == f_prof]
-        if f_ano != "Todos":
-            df_filtrado = df_filtrado[df_filtrado["Ano/Turma"] == f_ano]
-        if f_categoria == "Apenas Atitude (AA)":
-            df_filtrado = df_filtrado[df_filtrado["Atitudes (AA)"].str.strip() != ""]
-        elif f_categoria == "Apenas Comportamento (CS)":
-            df_filtrado = df_filtrado[df_filtrado["Comportamento (CS)"].str.strip() != ""]
-            
-        # Filtragem por período/data
-        if isinstance(datas_sel, (tuple, list)) and len(datas_sel) == 2:
-            data_inicio, data_fim = datas_sel
-            df_filtrado = df_filtrado[
-                (df_filtrado["data_hora_raw"].dt.date >= data_inicio) &
-                (df_filtrado["data_hora_raw"].dt.date <= data_fim)
-            ]
-        elif not isinstance(datas_sel, (tuple, list)):
-            df_filtrado = df_filtrado[df_filtrado["data_hora_raw"].dt.date == datas_sel]
-            
-        # Filtragem por critérios específicos
-        if criterios_selecionados:
-            mask = df_filtrado.apply(
-                lambda r: any(
-                    crit in r["Atitudes (AA)"] or crit in r["Comportamento (CS)"]
-                    for crit in criterios_selecionados
-                ),
-                axis=1
-            )
-            df_filtrado = df_filtrado[mask]
-            
-        if busca.strip():
-            df_filtrado = df_filtrado[
-                df_filtrado["Aluno"].str.contains(busca, case=False, na=False) |
-                df_filtrado["RA"].str.contains(busca, case=False, na=False)
-            ]
-            
-        # Aplica ordenação
-        if f_ordem == "Mais Recentes Primeiro":
-            df_filtrado = df_filtrado.sort_values(by="data_hora_raw", ascending=False)
-        elif f_ordem == "Mais Antigos Primeiro":
-            df_filtrado = df_filtrado.sort_values(by="data_hora_raw", ascending=True)
-        elif f_ordem == "Aluno (A-Z)":
-            df_filtrado = df_filtrado.sort_values(by="Aluno", ascending=True)
-        elif f_ordem == "Professor (A-Z)":
-            df_filtrado = df_filtrado.sort_values(by="Registrado por", ascending=True)
-            
-        st.markdown(f"**Registros encontrados:** {len(df_filtrado)}")
-        
-        # Remove coluna auxiliar de data raw antes de exibir
-        df_exibicao = df_filtrado.drop(columns=["data_hora_raw"]) if "data_hora_raw" in df_filtrado.columns else df_filtrado
-        
-        st.markdown("### 📋 Resultados")
-        if df_exibicao.empty:
-            st.info("Nenhum registro encontrado para os filtros atuais.")
-        else:
-            for idx, row in df_exibicao.iterrows():
-                aa_val = str(row.get("Atitudes (AA)", ""))
-                cs_val = str(row.get("Comportamento (CS)", ""))
-                desc_aa = float(row.get("Desconto_AA", 0.0))
-                desc_cs = float(row.get("Desconto_CS", 0.0))
-                aa_html = f'<p style="margin: 2px 0; color: #6366f1; font-size: 0.9rem;"><b>AA (-{desc_aa:.1f} pts):</b> {aa_val}</p>' if aa_val and aa_val.lower() != 'nan' and aa_val.strip() else ''
-                cs_html = f'<p style="margin: 2px 0; color: #10b981; font-size: 0.9rem;"><b>CS (-{desc_cs:.1f} pts):</b> {cs_val}</p>' if cs_val and cs_val.lower() != 'nan' and cs_val.strip() else ''
-                obs_val = str(row.get("Observações / Detalhamento", ""))
-                obs = obs_val if obs_val.lower() != 'nan' else ''
-                
-                card_html = f"""<div class="custom-card" style="margin-bottom: 15px; padding: 15px;">
-<div style="display: flex; justify-content: space-between; margin-bottom: 8px; font-size: 0.85rem;">
-<span style="font-weight: 600; color: #334155;">🎓 {row["Aluno"]} <span style="color:#94a3b8; font-weight:normal;">({row["Ano/Turma"]})</span></span>
-<span style="color: #64748b;">📅 {row["Data/Hora"]}</span>
-</div>
-<div style="font-size: 0.85rem; color: #64748b; margin-bottom: 10px;">
-📍 {row["Destino"]} &nbsp;|&nbsp; 🚌 {row["Ônibus"]} &nbsp;|&nbsp; 👤 Prof: {row["Registrado por"]}
-</div>
-{aa_html}
-{cs_html}
-<p style="margin: 8px 0 0 0; font-size: 0.95rem; color: #0f172a; border-top: 1px dashed #e2e8f0; padding-top: 8px;">
-<i>"{obs}"</i>
-</p>
-</div>"""
-                st.markdown(card_html, unsafe_allow_html=True)
+        with st.container(border=True):
+            st.markdown("### 🔍 Histórico e Filtros do Relatório")
 
-        # Exportação para Excel (sem coluna auxiliar)
-        buffer = io.BytesIO()
-        with pd.ExcelWriter(buffer, engine='openpyxl') as writer:
-            df_exibicao.to_excel(writer, index=False, sheet_name="Ocorrências_Estudo_Meio")
-        excel_data = buffer.getvalue()
-        
-        st.download_button(
-            label="📥 Baixar Histórico Filtrado em Excel (.xlsx)",
-            data=excel_data,
-            file_name=f"relatorio_ocorrencias_{datetime.now().strftime('%Y%m%d_%H%M%S')}.xlsx",
-            mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-        )
+            col_filtro_onibus, col_filtro_destino, col_filtro_prof, col_filtro_ano = st.columns(4)
+            with col_filtro_onibus:
+                lista_onibus = ["Todos"] + sorted(list(df_oco["Ônibus"].unique()))
+                f_onibus = st.selectbox("Filtro por Ônibus:", lista_onibus)
+            with col_filtro_destino:
+                lista_destinos = ["Todos"] + sorted(list(df_oco["Destino"].unique()))
+                f_destino = st.selectbox("Filtro por Destino:", lista_destinos)
+            with col_filtro_prof:
+                lista_profs = ["Todos"] + sorted(list(df_oco["Registrado por"].unique()))
+                f_prof = st.selectbox("Filtro por Professor:", lista_profs)
+            with col_filtro_ano:
+                lista_anos = ["Todos"] + sorted(list(df_oco["Ano/Turma"].unique()))
+                f_ano = st.selectbox("Filtro por Ano/Turma:", lista_anos)
+
+            col_cat, col_datas, col_ordem = st.columns(3)
+            with col_cat:
+                f_categoria = st.selectbox("Filtrar por Categoria:", ["Todas", "Apenas Atitude (AA)", "Apenas Comportamento (CS)"])
+            with col_datas:
+                # Pega as datas mínima e máxima reais para definir o range
+                min_dt = df_oco["data_hora_raw"].min().date()
+                max_dt = df_oco["data_hora_raw"].max().date()
+
+                datas_sel = st.date_input(
+                    "Filtro por Período / Data:",
+                    value=(min_dt, max_dt),
+                    min_value=min_dt - pd.Timedelta(days=30),
+                    max_value=max_dt + pd.Timedelta(days=30)
+                )
+            with col_ordem:
+                f_ordem = st.selectbox(
+                    "Ordenar resultados por:",
+                    [
+                        "Mais Recentes Primeiro",
+                        "Mais Antigos Primeiro",
+                        "Aluno (A-Z)",
+                        "Professor (A-Z)"
+                    ]
+                )
+
+            col_criterios, col_busca_ra = st.columns([2, 1])
+            with col_criterios:
+                criterios_selecionados = st.multiselect(
+                    "Filtro por Critério do Regulamento (AA / CS):",
+                    options=CRITERIOS_AA + CRITERIOS_CS,
+                    placeholder="Selecione um ou mais critérios..."
+                )
+            with col_busca_ra:
+                busca = st.text_input("🔍 Buscar por Nome do Aluno ou RA:")
+
+            # Aplica filtros dinamicamente
+            df_filtrado = df_oco.copy()
+            if f_onibus != "Todos":
+                df_filtrado = df_filtrado[df_filtrado["Ônibus"] == f_onibus]
+            if f_destino != "Todos":
+                df_filtrado = df_filtrado[df_filtrado["Destino"] == f_destino]
+            if f_prof != "Todos":
+                df_filtrado = df_filtrado[df_filtrado["Registrado por"] == f_prof]
+            if f_ano != "Todos":
+                df_filtrado = df_filtrado[df_filtrado["Ano/Turma"] == f_ano]
+            if f_categoria == "Apenas Atitude (AA)":
+                df_filtrado = df_filtrado[df_filtrado["Atitudes (AA)"].str.strip() != ""]
+            elif f_categoria == "Apenas Comportamento (CS)":
+                df_filtrado = df_filtrado[df_filtrado["Comportamento (CS)"].str.strip() != ""]
+
+            # Filtragem por período/data
+            if isinstance(datas_sel, (tuple, list)) and len(datas_sel) == 2:
+                data_inicio, data_fim = datas_sel
+                df_filtrado = df_filtrado[
+                    (df_filtrado["data_hora_raw"].dt.date >= data_inicio) &
+                    (df_filtrado["data_hora_raw"].dt.date <= data_fim)
+                ]
+            elif not isinstance(datas_sel, (tuple, list)):
+                df_filtrado = df_filtrado[df_filtrado["data_hora_raw"].dt.date == datas_sel]
+
+            # Filtragem por critérios específicos
+            if criterios_selecionados:
+                mask = df_filtrado.apply(
+                    lambda r: any(
+                        crit in r["Atitudes (AA)"] or crit in r["Comportamento (CS)"]
+                        for crit in criterios_selecionados
+                    ),
+                    axis=1
+                )
+                df_filtrado = df_filtrado[mask]
+
+            if busca.strip():
+                df_filtrado = df_filtrado[
+                    df_filtrado["Aluno"].str.contains(busca, case=False, na=False) |
+                    df_filtrado["RA"].str.contains(busca, case=False, na=False)
+                ]
+
+            # Aplica ordenação
+            if f_ordem == "Mais Recentes Primeiro":
+                df_filtrado = df_filtrado.sort_values(by="data_hora_raw", ascending=False)
+            elif f_ordem == "Mais Antigos Primeiro":
+                df_filtrado = df_filtrado.sort_values(by="data_hora_raw", ascending=True)
+            elif f_ordem == "Aluno (A-Z)":
+                df_filtrado = df_filtrado.sort_values(by="Aluno", ascending=True)
+            elif f_ordem == "Professor (A-Z)":
+                df_filtrado = df_filtrado.sort_values(by="Registrado por", ascending=True)
+
+            st.markdown(f"**Registros encontrados:** {len(df_filtrado)}")
+
+            # Remove coluna auxiliar de data raw antes de exibir
+            df_exibicao = df_filtrado.drop(columns=["data_hora_raw"]) if "data_hora_raw" in df_filtrado.columns else df_filtrado
+
+            st.markdown("**📋 Resultados**")
+            if df_exibicao.empty:
+                st.info("Nenhum registro encontrado para os filtros atuais.")
+            else:
+                for idx, row in df_exibicao.iterrows():
+                    aa_val = str(row.get("Atitudes (AA)", ""))
+                    cs_val = str(row.get("Comportamento (CS)", ""))
+                    desc_aa = float(row.get("Desconto_AA", 0.0))
+                    desc_cs = float(row.get("Desconto_CS", 0.0))
+                    aa_html = f'<p style="margin: 2px 0; color: #6366f1; font-size: 0.9rem;"><b>AA (-{desc_aa:.1f} pts):</b> {aa_val}</p>' if aa_val and aa_val.lower() != 'nan' and aa_val.strip() else ''
+                    cs_html = f'<p style="margin: 2px 0; color: #10b981; font-size: 0.9rem;"><b>CS (-{desc_cs:.1f} pts):</b> {cs_val}</p>' if cs_val and cs_val.lower() != 'nan' and cs_val.strip() else ''
+                    obs_val = str(row.get("Observações / Detalhamento", ""))
+                    obs = obs_val if obs_val.lower() != 'nan' else ''
+
+                    card_html = f"""<div class="custom-card" style="margin-bottom: 15px; padding: 15px;">
+    <div style="display: flex; justify-content: space-between; margin-bottom: 8px; font-size: 0.85rem;">
+    <span style="font-weight: 600; color: #334155;">🎓 {row["Aluno"]} <span style="color:#94a3b8; font-weight:normal;">({row["Ano/Turma"]})</span></span>
+    <span style="color: #64748b;">📅 {row["Data/Hora"]}</span>
+    </div>
+    <div style="font-size: 0.85rem; color: #64748b; margin-bottom: 10px;">
+    📍 {row["Destino"]} &nbsp;|&nbsp; 🚌 {row["Ônibus"]} &nbsp;|&nbsp; 👤 Prof: {row["Registrado por"]}
+    </div>
+    {aa_html}
+    {cs_html}
+    <p style="margin: 8px 0 0 0; font-size: 0.95rem; color: #0f172a; border-top: 1px dashed #e2e8f0; padding-top: 8px;">
+    <i>"{obs}"</i>
+    </p>
+    </div>"""
+                    st.markdown(card_html, unsafe_allow_html=True)
+
+            # Exportação para Excel (sem coluna auxiliar)
+            buffer = io.BytesIO()
+            with pd.ExcelWriter(buffer, engine='openpyxl') as writer:
+                df_exibicao.to_excel(writer, index=False, sheet_name="Ocorrências_Estudo_Meio")
+            excel_data = buffer.getvalue()
+
+            st.download_button(
+                label="📥 Baixar Histórico Filtrado em Excel (.xlsx)",
+                data=excel_data,
+                file_name=f"relatorio_ocorrencias_{datetime.now().strftime('%Y%m%d_%H%M%S')}.xlsx",
+                mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+            )
 
 elif selection == '⚙️ Administração':
     st.title("⚙️ Painel de Administração")
