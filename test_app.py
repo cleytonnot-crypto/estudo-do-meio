@@ -391,7 +391,15 @@ def test_obter_rubrica_por_ano():
     """Testa se a função obter_rubrica_por_ano normaliza e mapeia corretamente as séries."""
     from app import obter_rubrica_por_ano, RUBRICAS
 
-    # Deve mapear para a rubrica da 2ª série
+    # Verificar que as rubricas possuem os limites corretos
+    assert RUBRICAS["2ª série"]["max_aa"] == 1.0
+    assert RUBRICAS["2ª série"]["max_cs"] == 1.0
+    assert RUBRICAS["3ª série"]["max_aa"] == 0.4
+    assert RUBRICAS["3ª série"]["max_cs"] == 1.6
+    assert RUBRICAS["Geral"]["max_aa"] == 1.0
+    assert RUBRICAS["Geral"]["max_cs"] == 1.0
+
+    # Deve mapear para a rubrica da 2ª série (Vale do Paraíba)
     assert obter_rubrica_por_ano("2ª série") == RUBRICAS["2ª série"]
     assert obter_rubrica_por_ano("2ª SERIE") == RUBRICAS["2ª série"]
     assert obter_rubrica_por_ano("2 SÉRIE") == RUBRICAS["2ª série"]
@@ -399,15 +407,15 @@ def test_obter_rubrica_por_ano():
     assert obter_rubrica_por_ano("2º EM") == RUBRICAS["2ª série"]
     assert obter_rubrica_por_ano("2ºEM") == RUBRICAS["2ª série"]
 
-    # Deve mapear 3ª série para a rubrica da 2ª série (conforme regra temporária)
-    assert obter_rubrica_por_ano("3ª série") == RUBRICAS["2ª série"]
-    assert obter_rubrica_por_ano("3ª SERIE") == RUBRICAS["2ª série"]
-    assert obter_rubrica_por_ano("3 SÉRIE") == RUBRICAS["2ª série"]
-    assert obter_rubrica_por_ano("3EM") == RUBRICAS["2ª série"]
-    assert obter_rubrica_por_ano("3º EM") == RUBRICAS["2ª série"]
-    assert obter_rubrica_por_ano("3ºEM") == RUBRICAS["2ª série"]
-    assert obter_rubrica_por_ano("3 ano") == RUBRICAS["2ª série"]
-    assert obter_rubrica_por_ano("3º Ano") == RUBRICAS["2ª série"]
+    # Deve mapear 3ª série para a rubrica da 3ª série (Brasília)
+    assert obter_rubrica_por_ano("3ª série") == RUBRICAS["3ª série"]
+    assert obter_rubrica_por_ano("3ª SERIE") == RUBRICAS["3ª série"]
+    assert obter_rubrica_por_ano("3 SÉRIE") == RUBRICAS["3ª série"]
+    assert obter_rubrica_por_ano("3EM") == RUBRICAS["3ª série"]
+    assert obter_rubrica_por_ano("3º EM") == RUBRICAS["3ª série"]
+    assert obter_rubrica_por_ano("3ºEM") == RUBRICAS["3ª série"]
+    assert obter_rubrica_por_ano("3 ano") == RUBRICAS["3ª série"]
+    assert obter_rubrica_por_ano("3º Ano") == RUBRICAS["3ª série"]
 
     # Deve cair na rubrica Geral (fallback)
     assert obter_rubrica_por_ano("9º Ano A") == RUBRICAS["Geral"]

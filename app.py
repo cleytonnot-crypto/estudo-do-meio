@@ -473,7 +473,7 @@ if st.query_params.get("feedback") == "abrir":
 
 # Dicionário de Rubricas por Série / Tipo (Critérios negativos/infrações)
 RUBRICAS = {
-    "2ª série": {
+    "3ª série": {
         "max_aa": 0.4,
         "max_cs": 1.6,
         "AA": [
@@ -489,6 +489,25 @@ RUBRICAS = {
             ("Envolve-se em conflitos, provocações ou atitudes desrespeitosas", 0.4),
             ("Necessita lembretes pontuais sobre postura nos espaços visitados", 0.2),
             ("Tem atitudes inadequadas em ambientes institucionais ou públicos", 0.4),
+        ]
+    },
+    "2ª série": {
+        "max_aa": 1.0,
+        "max_cs": 1.0,
+        "AA": [
+            ("Falta de atenção ou conversa paralela durante explicações dos monitores/professores", 0.2),
+            ("Falta de empenho ou recusa em realizar anotações e registros solicitados", 0.2),
+            ("Ausência de registros fotográficos de pontos relevantes da visita (quando solicitado)", 0.2),
+            ("Desinteresse geral ou apatia nas atividades e discussões propostas", 0.2),
+            ("Ações dispersivas ou recusa de engajamento com o espaço visitado", 0.2),
+        ],
+        "CS": [
+            ("Falta de respeito ou grosseria com motoristas, guias, professores ou colegas", 0.2),
+            ("Descumpre regras no ônibus (sujeira, levantar-se em movimento, não usar cinto, som alto sem fone)", 0.2),
+            ("Atraso não justificado nos horários de refeição, reuniões ou recolhimento ao quarto", 0.2),
+            ("Uso inadequado, barulho excessivo ou danos nas dependências dos hotéis e visitas", 0.2),
+            ("Uso inadequado do celular em momentos não permitidos", 0.2),
+            ("Quebra de combinados ou desobediência a instruções diretas da equipe", 0.2),
         ]
     },
     "Geral": {
@@ -519,9 +538,9 @@ def obter_rubrica_por_ano(ano_aluno):
     # Mapeamento para 2ª série (Ensino Médio)
     if any(x in ano_clean for x in ["2ª SÉRIE", "2ª SERIE", "2 SÉRIE", "2 SERIE", "2EM", "2º EM", "2ºEM"]):
         return RUBRICAS["2ª série"]
-    # Se for 3ª série (que por enquanto usa a mesma rubrica do "3 ano"/2ª série, conforme informado):
+    # Se for 3ª série:
     if any(x in ano_clean for x in ["3ª SÉRIE", "3ª SERIE", "3 SÉRIE", "3 SERIE", "3EM", "3º EM", "3ºEM", "3 ANO", "3º ANO"]):
-        return RUBRICAS["2ª série"]
+        return RUBRICAS["3ª série"]
     return RUBRICAS["Geral"]
 
 # Unir todos os critérios de todas as rubricas para a filtragem no dashboard
