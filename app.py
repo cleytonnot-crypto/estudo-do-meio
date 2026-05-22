@@ -209,9 +209,17 @@ st.markdown("""
         font-weight: 600;
     }
     
-    /* "Acesso Rápido" Container Dark Theme (Aula del Futuro) - Sem usar :has() */
-    .main .block-container > div > div.element-container:nth-child(2) div[data-testid="stVerticalBlockBorderWrapper"],
-    .main .block-container > div > div.element-container:nth-child(2) > div {
+    /* Containers do Dashboard brancos para destacar do fundo cinza geral */
+    div[data-testid="stVerticalBlockBorderWrapper"] {
+        background-color: #ffffff;
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+        border: 1px solid #e2e8f0;
+        border-radius: 12px;
+    }
+
+    /* "Acesso Rápido" Container Dark Theme (Aula del Futuro) - Posição 3 */
+    .main .block-container > div > div.element-container:nth-child(3) div[data-testid="stVerticalBlockBorderWrapper"],
+    .main .block-container > div > div.element-container:nth-child(3) > div {
         background-color: #1e2128 !important;
         border-radius: 16px !important;
         border: none !important;
@@ -219,13 +227,13 @@ st.markdown("""
         box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1) !important;
     }
     
-    .main .block-container > div > div.element-container:nth-child(2) h4 {
+    .main .block-container > div > div.element-container:nth-child(3) h4 {
         color: #ffffff !important;
         margin-left: 15px !important;
     }
     
     /* Botões dentro do "Acesso Rápido" */
-    .main .block-container > div > div.element-container:nth-child(2) button[kind="primary"] {
+    .main .block-container > div > div.element-container:nth-child(3) button[kind="primary"] {
         background-color: #ffc107 !important;
         color: #1e2128 !important;
         border: none !important;
@@ -236,7 +244,7 @@ st.markdown("""
         box-shadow: 0 4px 6px rgba(0,0,0,0.1) !important;
     }
     
-    .main .block-container > div > div.element-container:nth-child(2) button[kind="secondary"] {
+    .main .block-container > div > div.element-container:nth-child(3) button[kind="secondary"] {
         background-color: #2c303a !important;
         color: #f8fafc !important;
         border: 1px solid #3f4451 !important;
@@ -248,7 +256,7 @@ st.markdown("""
         transition: all 0.2s ease-in-out;
     }
     
-    .main .block-container > div > div.element-container:nth-child(2) button[kind="secondary"]:hover {
+    .main .block-container > div > div.element-container:nth-child(3) button[kind="secondary"]:hover {
         background-color: #3f4451 !important;
         border-color: #4b5563 !important;
         color: #ffffff !important;
@@ -256,7 +264,7 @@ st.markdown("""
     }
 
     /* Força a quebra de linha nos botões para o ícone ficar no topo */
-    .main .block-container > div > div.element-container:nth-child(2) button p {
+    .main .block-container > div > div.element-container:nth-child(3) button p {
         white-space: pre-wrap !important;
         text-align: center !important;
         line-height: 1.4 !important;
