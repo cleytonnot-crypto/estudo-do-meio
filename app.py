@@ -209,6 +209,46 @@ st.markdown("""
         font-weight: 600;
     }
     
+    /* "Acesso Rápido" Container Dark Theme (Aula del Futuro) */
+    div[data-testid="stVerticalBlockBorderWrapper"]:has(.acesso-rapido-hook) {
+        background-color: #1e2128 !important;
+        border-radius: 16px !important;
+        border: none !important;
+        padding: 10px !important;
+        box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1) !important;
+    }
+    
+    /* Botões dentro do "Acesso Rápido" */
+    div[data-testid="stVerticalBlockBorderWrapper"]:has(.acesso-rapido-hook) button[kind="primary"] {
+        background-color: #ffc107 !important;
+        color: #1e2128 !important;
+        border: none !important;
+        border-radius: 12px !important;
+        height: 110px !important;
+        font-weight: 700 !important;
+        font-size: 1.05rem !important;
+        box-shadow: 0 4px 6px rgba(0,0,0,0.1) !important;
+    }
+    
+    div[data-testid="stVerticalBlockBorderWrapper"]:has(.acesso-rapido-hook) button[kind="secondary"] {
+        background-color: #2c303a !important;
+        color: #f8fafc !important;
+        border: 1px solid #3f4451 !important;
+        border-radius: 12px !important;
+        height: 110px !important;
+        font-weight: 500 !important;
+        font-size: 1.05rem !important;
+        box-shadow: 0 4px 6px rgba(0,0,0,0.05) !important;
+        transition: all 0.2s ease-in-out;
+    }
+    
+    div[data-testid="stVerticalBlockBorderWrapper"]:has(.acesso-rapido-hook) button[kind="secondary"]:hover {
+        background-color: #3f4451 !important;
+        border-color: #4b5563 !important;
+        color: #ffffff !important;
+        transform: translateY(-2px);
+    }
+    
     .stAlert {
         border-radius: 12px;
     }
@@ -230,7 +270,7 @@ st.markdown("""
         border-radius: 12px;
         padding: 20px;
         box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
-        border-left: 5px solid #10b981; /* Verde Esmeralda para métricas */
+        border-left: 5px solid #10b981;
         border-top: 1px solid #e2e8f0;
         border-right: 1px solid #e2e8f0;
         border-bottom: 1px solid #e2e8f0;
@@ -425,19 +465,25 @@ st.markdown("<h2 style='text-align: center; color: #1e293b; margin-bottom: 20px;
 if 'selection' not in st.session_state:
     st.session_state.selection = '📝 Registrar Ocorrência'
 
-col_m1, col_m2, col_m3 = st.columns(3)
-with col_m1:
-    if st.button("📝 Registrar Ocorrência", use_container_width=True, type="primary" if st.session_state.selection == '📝 Registrar Ocorrência' else "secondary"):
-        st.session_state.selection = '📝 Registrar Ocorrência'
-        st.rerun()
-with col_m2:
-    if st.button("📊 Dashboard da Coordenação", use_container_width=True, type="primary" if st.session_state.selection == '📊 Dashboard da Coordenação' else "secondary"):
-        st.session_state.selection = '📊 Dashboard da Coordenação'
-        st.rerun()
-with col_m3:
-    if st.button("⚙️ Administração", use_container_width=True, type="primary" if st.session_state.selection == '⚙️ Administração' else "secondary"):
-        st.session_state.selection = '⚙️ Administração'
-        st.rerun()
+with st.container(border=True):
+    # O hook invisível aciona o CSS escuro apenas para este bloco!
+    st.markdown("<span class='acesso-rapido-hook'></span>", unsafe_allow_html=True)
+    st.markdown("<h4 style='color: #ffffff; margin-top: 0; margin-bottom: 15px;'>⚡ Acesso Rápido</h4>", unsafe_allow_html=True)
+    
+    col_m1, col_m2, col_m3 = st.columns(3)
+    with col_m1:
+        # A quebra de linha com espaços simula o ícone no topo do botão
+        if st.button("📝\\nRegistrar", use_container_width=True, type="primary" if st.session_state.selection == '📝 Registrar Ocorrência' else "secondary"):
+            st.session_state.selection = '📝 Registrar Ocorrência'
+            st.rerun()
+    with col_m2:
+        if st.button("📊\\nDashboard", use_container_width=True, type="primary" if st.session_state.selection == '📊 Dashboard da Coordenação' else "secondary"):
+            st.session_state.selection = '📊 Dashboard da Coordenação'
+            st.rerun()
+    with col_m3:
+        if st.button("⚙️\\nAdministração", use_container_width=True, type="primary" if st.session_state.selection == '⚙️ Administração' else "secondary"):
+            st.session_state.selection = '⚙️ Administração'
+            st.rerun()
 
 selection = st.session_state.selection
 st.markdown("<hr style='margin-top: 5px; margin-bottom: 25px;'>", unsafe_allow_html=True)
