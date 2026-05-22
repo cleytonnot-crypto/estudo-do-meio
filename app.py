@@ -440,7 +440,17 @@ if selection == '📝 Registrar Ocorrência':
         with st.container():
             st.markdown("### 1. Quem está registrando?")
             prof_dict = {f"{p.nome} (Destino: {p.viagem or 'Qualquer'} | {p.onibus or 'Sem Ônibus'})": p.id for p in professores}
-            prof_selecionado = st.selectbox("Selecione o Professor/Monitor:", list(prof_dict.keys()))
+            prof_selecionado = st.selectbox(
+                "Selecione o Professor/Monitor:", 
+                options=list(prof_dict.keys()),
+                index=None,
+                placeholder="🔍 Digite para buscar..."
+            )
+            
+            if not prof_selecionado:
+                st.info("👆 Por favor, busque e selecione o seu nome acima para continuar.")
+                st.stop()
+                
             professor_id = prof_dict[prof_selecionado]
             
             with get_db() as db:
@@ -469,7 +479,17 @@ if selection == '📝 Registrar Ocorrência':
                 st.info("ℹ️ Nenhum aluno atende aos filtros de destino e ônibus selecionados.")
             else:
                 aluno_dict = {f"{a.nome} (RA: {a.ra} | Destino: {a.viagem_destino} | {a.onibus or 'Sem Ônibus'})": a.id for a in alunos_filtrados}
-                aluno_selecionado = st.selectbox("Selecione o Aluno:", list(aluno_dict.keys()))
+                aluno_selecionado = st.selectbox(
+                    "Selecione o Aluno:", 
+                    options=list(aluno_dict.keys()),
+                    index=None,
+                    placeholder="🔍 Digite o nome ou RA para buscar..."
+                )
+                
+                if not aluno_selecionado:
+                    st.info("👆 Por favor, busque e selecione o aluno acima para preencher a ocorrência.")
+                    st.stop()
+                    
                 aluno_id = aluno_dict[aluno_selecionado]
                 
                 with get_db() as db:
