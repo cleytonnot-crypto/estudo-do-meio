@@ -1,5 +1,5 @@
 import os
-from sqlalchemy import create_engine, Column, Integer, String, ForeignKey, DateTime, Text, text
+from sqlalchemy import create_engine, Column, Integer, String, ForeignKey, DateTime, Text, text, Float
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker, relationship
 from datetime import datetime
@@ -41,6 +41,8 @@ class Avaliacao(Base):
     data_hora = Column(DateTime, default=datetime.now)
     atitude_aa = Column(String(255)) # Critérios selecionados
     comportamento_cs = Column(String(255)) # Critérios selecionados
+    desconto_aa = Column(Float, default=0.0) # Pontos perdidos em AA
+    desconto_cs = Column(Float, default=0.0) # Pontos perdidos em CS
     observacoes = Column(Text)
 
     # Relacionamentos para facilitar consultas (Opcional, mas recomendado)
@@ -94,6 +96,21 @@ def inicializar_banco():
                         print(f"Coluna '{col}' adicionada com sucesso à tabela 'professores'.")
                     except Exception as e:
                         print(f"Erro ao adicionar coluna '{col}' na tabela 'professores': {e}")
+                        
+        # Colunas necessárias para 'avaliacoes'
+        colunas_avaliacoes = {
+            "desconto_aa": "FLOAT DEFAULT 0.0",
+            "desconto_cs": "FLOAT DEFAULT 0.0"
+        }
+        with engine.connect() as conn:
+            colunas_existentes_ava = [info[1] for info in conn.execute(text("PRAGMA table_info(avaliacoes)")).fetchall()]
+            for col, tipo in colunas_avaliacoes.items():
+                if col not in colunas_existentes_ava:
+                    try:
+                        conn.execute(text(f"ALTER TABLE avaliacoes ADD COLUMN {col} {tipo}"))
+                        print(f"Coluna '{col}' adicionada com sucesso à tabela 'avaliacoes'.")
+                    except Exception as e:
+                        print(f"Erro ao adicionar coluna '{col}' na tabela 'avaliacoes': {e}")
     finally:
         db.close()
     print("Banco de dados inicializado com sucesso!")
