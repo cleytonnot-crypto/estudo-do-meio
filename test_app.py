@@ -145,3 +145,87 @@ def test_limpar_valor_excel_helper():
     assert limpar_email("  TESTE@Escola.com.br  ") == "teste@escola.com.br"
 
 
+def test_processar_excel_alunos_duplicados(db_session):
+    """Testa se processar_excel_alunos ignora duplicados (RA/Email) sem falhar com IntegrityError."""
+    import pandas as pd
+    from app import processar_excel_alunos
+    from database import Aluno
+    
+    # Cria aluno pré-existente
+    aluno_existente = Aluno(nome="Aluno Antigo", ra="111111", email="antigo@escola.com.br", ano="9º Ano A", viagem_destino="MG")
+    db_session.add(aluno_existente)
+    db_session.commit()
+    
+    # DataFrame com:
+    # 1. Aluno válido novo
+    # 2. Aluno com RA duplicado em relação ao banco
+    # 3. Aluno com Email duplicado em relação ao banco
+    # 4. Aluno com Email duplicado dentro do próprio arquivo
+    data = {
+        "nome": ["Aluno Novo", "Aluno RA Duplicado", "Aluno Email Duplicado", "Aluno Interno Duplicado"],
+        "ra": ["222222", "111111", "333333", "444444"],
+        "email": ["novo@escola.com.br", "diferente1@escola.com.br", "antigo@escola.com.br", "novo@escola.com.br"],
+        "ano": ["9º Ano B", "9º Ano A", "9º Ano B", "9º Ano C"],
+        "viagem_destino": ["MG", "MG", "MG", "MG"],
+        "onibus": ["Ônibus 1", "Ônibus 1", "Ônibus 1", "Ônibus 1"]
+    }
+    df = pd.DataFrame(data)
+    
+    # Processa
+    count, duplicates_skipped = processar_excel_alunos(df, db_session)
+    
+    # Apenas o primeiro deve ser adicionado. Os outros 3 devem ser ignorados.
+    assert count == 1
+    assert duplicates_skipped == 3
+    
+    # Verifica no banco
+    alunos = db_session.query(Aluno).all()
+    # Total de alunos deve ser 2 (o pré-existente + o novo válido)
+    assert len(alunos) == 2
+    
+    nomes = [a.nome for a in alunos]
+    assert "Aluno Antigo" in nomes
+    assert "Aluno Novo" in nomes
+    assert "Aluno RA Duplicado" not in nomes
+    assert "Aluno Email Duplicado" not in nomes
+
+
+def test_processar_excel_professores_duplicados(db_session):
+    """Testa se processar_excel_professores ignora duplicados sem falhar."""
+    import pandas as pd
+    from app import processar_excel_professores
+    from database import Professor
+    
+    # Cria professor pré-existente
+    prof_existente = Professor(nome="Prof Antigo", email="antigo.prof@escola.com.br", viagem="MG")
+    db_session.add(prof_existente)
+    db_session.commit()
+    
+    # DataFrame com:
+    # 1. Professor válido novo
+    # 2. Professor com Email duplicado em relação ao banco
+    # 3. Professor com Email duplicado dentro do próprio arquivo
+    data = {
+        "nome": ["Prof Novo", "Prof Duplicado Banco", "Prof Duplicado Interno"],
+        "email": ["novo.prof@escola.com.br", "antigo.prof@escola.com.br", "novo.prof@escola.com.br"],
+        "viagem": ["MG", "MG", "MG"],
+        "onibus": ["Ônibus 1", "Ônibus 1", "Ônibus 1"]
+    }
+    df = pd.DataFrame(data)
+    
+    # Processa
+    count, duplicates_skipped = processar_excel_professores(df, db_session)
+    
+    # Apenas o primeiro deve ser adicionado.
+    assert count == 1
+    assert duplicates_skipped == 2
+    
+    # Verifica no banco
+    profs = db_session.query(Professor).all()
+    assert len(profs) == 2
+    
+    nomes = [p.nome for p in profs]
+    assert "Prof Antigo" in nomes
+    assert "Prof Novo" in nomes
+
+

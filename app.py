@@ -26,6 +26,91 @@ def limpar_nome(val):
         return ""
     return str(val).strip()
 
+def processar_excel_professores(df, db):
+    expected = ['nome', 'email', 'viagem']
+    if not all(col in df.columns for col in expected):
+        raise ValueError(f"O arquivo deve conter as colunas: {expected}")
+        
+    count = 0
+    duplicates_skipped = 0
+    existing_emails = set(str(p[0]).strip().lower() for p in db.query(Professor.email).all() if p[0])
+    
+    for _, r in df.iterrows():
+        if pd.isna(r['nome']) or pd.isna(r['email']):
+            continue
+        
+        nome_val = limpar_nome(r['nome'])
+        email_val = limpar_email(r['email'])
+        
+        if not nome_val or not email_val:
+            continue
+            
+        if email_val not in existing_emails:
+            on_val = limpar_valor_excel(r['onibus']) if 'onibus' in df.columns else None
+            try:
+                novo_prof = Professor(
+                    nome=nome_val,
+                    email=email_val,
+                    viagem=limpar_valor_excel(r['viagem']),
+                    onibus=on_val
+                )
+                db.add(novo_prof)
+                db.commit()
+                existing_emails.add(email_val)
+                count += 1
+            except Exception:
+                db.rollback()
+                duplicates_skipped += 1
+        else:
+            duplicates_skipped += 1
+            
+    return count, duplicates_skipped
+
+def processar_excel_alunos(df, db):
+    expected = ['nome', 'ra', 'email', 'ano', 'viagem_destino']
+    if not all(col in df.columns for col in expected):
+        raise ValueError(f"O arquivo deve conter as colunas: {expected}")
+        
+    count = 0
+    duplicates_skipped = 0
+    existing_ras = set(str(a[0]).strip().lower() for a in db.query(Aluno.ra).all() if a[0])
+    existing_emails = set(str(a[0]).strip().lower() for a in db.query(Aluno.email).all() if a[0])
+    
+    for _, r in df.iterrows():
+        if pd.isna(r['nome']) or pd.isna(r['ra']) or pd.isna(r['email']):
+            continue
+        
+        nome_val = limpar_nome(r['nome'])
+        ra_val = limpar_valor_excel(r['ra'])
+        email_val = limpar_email(r['email'])
+        
+        if not nome_val or not ra_val or not email_val:
+            continue
+            
+        if ra_val.lower() not in existing_ras and email_val not in existing_emails:
+            on_val = limpar_valor_excel(r['onibus']) if 'onibus' in df.columns else None
+            try:
+                novo_aluno = Aluno(
+                    nome=nome_val,
+                    ra=ra_val,
+                    email=email_val,
+                    ano=limpar_valor_excel(r['ano']),
+                    viagem_destino=limpar_valor_excel(r['viagem_destino']),
+                    onibus=on_val
+                )
+                db.add(novo_aluno)
+                db.commit()
+                existing_ras.add(ra_val.lower())
+                existing_emails.add(email_val)
+                count += 1
+            except Exception:
+                db.rollback()
+                duplicates_skipped += 1
+        else:
+            duplicates_skipped += 1
+            
+    return count, duplicates_skipped
+
 # Inicializa o banco de dados
 inicializar_banco()
 
@@ -799,39 +884,13 @@ elif selection == '⚙️ Administração':
             if uploaded_p_file:
                 try:
                     df = pd.read_excel(uploaded_p_file)
-                    expected = ['nome', 'email', 'viagem']
-                    if all(col in df.columns for col in expected):
-                        count = 0
-                        with get_db() as db:
-                            # Carrega emails cadastrados para evitar duplicados locais/banco (case-insensitive)
-                            existing_emails = set(str(p[0]).strip().lower() for p in db.query(Professor.email).all() if p[0])
-                            
-                            for _, r in df.iterrows():
-                                if pd.isna(r['nome']) or pd.isna(r['email']):
-                                    continue
-                                
-                                nome_val = limpar_nome(r['nome'])
-                                email_val = limpar_email(r['email'])
-                                
-                                if not nome_val or not email_val:
-                                    continue
-                                    
-                                if email_val not in existing_emails:
-                                    on_val = limpar_valor_excel(r['onibus']) if 'onibus' in df.columns else None
-                                    novo_prof = Professor(
-                                        nome=nome_val,
-                                        email=email_val,
-                                        viagem=limpar_valor_excel(r['viagem']),
-                                        onibus=on_val
-                                    )
-                                    db.add(novo_prof)
-                                    existing_emails.add(email_val)
-                                    count += 1
-                            db.commit()
-                        st.success(f"✅ {count} novos professores cadastrados!")
-                        st.rerun()
+                    with get_db() as db:
+                        count, duplicates_skipped = processar_excel_professores(df, db)
+                    if duplicates_skipped > 0:
+                        st.success(f"✅ {count} novos professores cadastrados com sucesso! ({duplicates_skipped} registros duplicados foram ignorados)")
                     else:
-                        st.error(f"O arquivo deve conter as colunas: {expected}")
+                        st.success(f"✅ {count} novos professores cadastrados!")
+                    st.rerun()
                 except Exception as e:
                     st.error(f"Erro ao processar: {e}")
                     
@@ -850,45 +909,13 @@ elif selection == '⚙️ Administração':
             if uploaded_a_file:
                 try:
                     df = pd.read_excel(uploaded_a_file)
-                    expected = ['nome', 'ra', 'email', 'ano', 'viagem_destino']
-                    if all(col in df.columns for col in expected):
-                        count = 0
-                        with get_db() as db:
-                            # Carrega RAs e emails cadastrados para evitar duplicados locais/banco (case-insensitive)
-                            existing_ras = set(str(a[0]).strip().lower() for a in db.query(Aluno.ra).all() if a[0])
-                            existing_emails = set(str(a[0]).strip().lower() for a in db.query(Aluno.email).all() if a[0])
-                            
-                            for _, r in df.iterrows():
-                                if pd.isna(r['nome']) or pd.isna(r['ra']) or pd.isna(r['email']):
-                                    continue
-                                
-                                nome_val = limpar_nome(r['nome'])
-                                ra_val = limpar_valor_excel(r['ra'])
-                                email_val = limpar_email(r['email'])
-                                
-                                if not nome_val or not ra_val or not email_val:
-                                    continue
-                                    
-                                # Verifica duplicidade de RA e E-mail de forma case-insensitive
-                                if ra_val.lower() not in existing_ras and email_val not in existing_emails:
-                                    on_val = limpar_valor_excel(r['onibus']) if 'onibus' in df.columns else None
-                                    novo_aluno = Aluno(
-                                        nome=nome_val,
-                                        ra=ra_val,
-                                        email=email_val,
-                                        ano=limpar_valor_excel(r['ano']),
-                                        viagem_destino=limpar_valor_excel(r['viagem_destino']),
-                                        onibus=on_val
-                                    )
-                                    db.add(novo_aluno)
-                                    existing_ras.add(ra_val.lower())
-                                    existing_emails.add(email_val)
-                                    count += 1
-                            db.commit()
-                        st.success(f"✅ {count} novos alunos cadastrados!")
-                        st.rerun()
+                    with get_db() as db:
+                        count, duplicates_skipped = processar_excel_alunos(df, db)
+                    if duplicates_skipped > 0:
+                        st.success(f"✅ {count} novos alunos cadastrados com sucesso! ({duplicates_skipped} registros duplicados ou inválidos foram ignorados)")
                     else:
-                        st.error(f"O arquivo deve conter as colunas: {expected}")
+                        st.success(f"✅ {count} novos alunos cadastrados!")
+                    st.rerun()
                 except Exception as e:
                     st.error(f"Erro ao processar: {e}")
                     
