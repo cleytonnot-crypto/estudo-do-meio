@@ -146,7 +146,7 @@ def test_limpar_valor_excel_helper():
 
 
 def test_processar_excel_alunos_duplicados(db_session):
-    """Testa se processar_excel_alunos ignora duplicados (RA/Email) sem falhar com IntegrityError."""
+    """Testa se processar_excel_alunos atualiza duplicados (RA/Email) sem falhar com IntegrityError."""
     import pandas as pd
     from app import processar_excel_alunos
     from database import Aluno
@@ -158,9 +158,9 @@ def test_processar_excel_alunos_duplicados(db_session):
     
     # DataFrame com:
     # 1. Aluno válido novo
-    # 2. Aluno com RA duplicado em relação ao banco
-    # 3. Aluno com Email duplicado em relação ao banco
-    # 4. Aluno com Email duplicado dentro do próprio arquivo
+    # 2. Aluno com RA duplicado em relação ao banco (atualiza)
+    # 3. Aluno com Email duplicado em relação ao banco (atualiza)
+    # 4. Aluno com Email duplicado dentro do próprio arquivo (atualiza)
     data = {
         "nome": ["Aluno Novo", "Aluno RA Duplicado", "Aluno Email Duplicado", "Aluno Interno Duplicado"],
         "ra": ["222222", "111111", "333333", "444444"],
@@ -174,24 +174,23 @@ def test_processar_excel_alunos_duplicados(db_session):
     # Processa
     count, duplicates_skipped = processar_excel_alunos(df, db_session)
     
-    # Apenas o primeiro deve ser adicionado. Os outros 3 devem ser ignorados.
-    assert count == 1
-    assert duplicates_skipped == 3
+    # Todos os 4 devem ser processados (inseridos ou atualizados)
+    assert count == 4
+    assert duplicates_skipped == 0
     
     # Verifica no banco
     alunos = db_session.query(Aluno).all()
-    # Total de alunos deve ser 2 (o pré-existente + o novo válido)
+    # Total de alunos deve ser 2 (o pré-existente + o novo válido, ambos atualizados)
     assert len(alunos) == 2
     
     nomes = [a.nome for a in alunos]
-    assert "Aluno Antigo" in nomes
-    assert "Aluno Novo" in nomes
-    assert "Aluno RA Duplicado" not in nomes
-    assert "Aluno Email Duplicado" not in nomes
+    assert "Aluno Email Duplicado" in nomes
+    assert "Aluno Interno Duplicado" in nomes
+    assert "Aluno Antigo" not in nomes
 
 
 def test_processar_excel_professores_duplicados(db_session):
-    """Testa se processar_excel_professores ignora duplicados sem falhar."""
+    """Testa se processar_excel_professores atualiza duplicados sem falhar."""
     import pandas as pd
     from app import processar_excel_professores
     from database import Professor
@@ -203,8 +202,8 @@ def test_processar_excel_professores_duplicados(db_session):
     
     # DataFrame com:
     # 1. Professor válido novo
-    # 2. Professor com Email duplicado em relação ao banco
-    # 3. Professor com Email duplicado dentro do próprio arquivo
+    # 2. Professor com Email duplicado em relação ao banco (atualiza)
+    # 3. Professor com Email duplicado dentro do próprio arquivo (atualiza)
     data = {
         "nome": ["Prof Novo", "Prof Duplicado Banco", "Prof Duplicado Interno"],
         "email": ["novo.prof@escola.com.br", "antigo.prof@escola.com.br", "novo.prof@escola.com.br"],
@@ -216,17 +215,17 @@ def test_processar_excel_professores_duplicados(db_session):
     # Processa
     count, duplicates_skipped = processar_excel_professores(df, db_session)
     
-    # Apenas o primeiro deve ser adicionado.
-    assert count == 1
-    assert duplicates_skipped == 2
+    # Todos os 3 devem ser processados (inseridos ou atualizados)
+    assert count == 3
+    assert duplicates_skipped == 0
     
     # Verifica no banco
     profs = db_session.query(Professor).all()
     assert len(profs) == 2
     
     nomes = [p.nome for p in profs]
-    assert "Prof Antigo" in nomes
-    assert "Prof Novo" in nomes
+    assert "Prof Duplicado Banco" in nomes
+    assert "Prof Duplicado Interno" in nomes
 
 
 def test_normalizar_coluna_helper():
@@ -247,5 +246,75 @@ def test_normalizar_coluna_helper():
     assert normalizar_coluna("Turma") == "ano"
     assert normalizar_coluna("Série") == "ano"
     assert normalizar_coluna("Classe") == "ano"
+
+
+def test_processar_excel_alunos_sem_coluna_onibus(db_session):
+    """Testa que a importação de alunos sem a coluna 'ônibus' preserva os ônibus já cadastrados no banco."""
+    import pandas as pd
+    from app import processar_excel_alunos
+    from database import Aluno
+    
+    # Cria aluno pré-existente com ônibus
+    aluno_existente = Aluno(
+        nome="Aluno Antigo",
+        ra="111111",
+        email="antigo@escola.com.br",
+        ano="9º Ano A",
+        viagem_destino="MG",
+        onibus="Ônibus Original"
+    )
+    db_session.add(aluno_existente)
+    db_session.commit()
+    
+    # DataFrame sem a coluna 'onibus'
+    data = {
+        "nome": ["Aluno Antigo"],
+        "ra": ["111111"],
+        "email": ["antigo@escola.com.br"],
+        "ano": ["9º Ano A"],
+        "viagem_destino": ["MG"]
+    }
+    df = pd.DataFrame(data)
+    
+    count, duplicates_skipped = processar_excel_alunos(df, db_session)
+    assert count == 1
+    assert duplicates_skipped == 0
+    
+    # Verifica que o ônibus original NÃO foi apagado/sobrescrito
+    aluno_db = db_session.query(Aluno).filter(Aluno.ra == "111111").first()
+    assert aluno_db.onibus == "Ônibus Original"
+
+
+def test_processar_excel_professores_sem_coluna_onibus(db_session):
+    """Testa que a importação de professores sem a coluna 'ônibus' preserva os ônibus já cadastrados no banco."""
+    import pandas as pd
+    from app import processar_excel_professores
+    from database import Professor
+    
+    # Cria professor pré-existente com ônibus
+    prof_existente = Professor(
+        nome="Prof Antigo",
+        email="antigo.prof@escola.com.br",
+        viagem="MG",
+        onibus="Ônibus Original"
+    )
+    db_session.add(prof_existente)
+    db_session.commit()
+    
+    # DataFrame sem a coluna 'onibus'
+    data = {
+        "nome": ["Prof Antigo"],
+        "email": ["antigo.prof@escola.com.br"],
+        "viagem": ["MG"]
+    }
+    df = pd.DataFrame(data)
+    
+    count, duplicates_skipped = processar_excel_professores(df, db_session)
+    assert count == 1
+    assert duplicates_skipped == 0
+    
+    # Verifica que o ônibus original NÃO foi apagado/sobrescrito
+    prof_db = db_session.query(Professor).filter(Professor.email == "antigo.prof@escola.com.br").first()
+    assert prof_db.onibus == "Ônibus Original"
 
 

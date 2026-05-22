@@ -50,7 +50,6 @@ def processar_excel_professores(df, db):
         
     count = 0
     duplicates_skipped = 0
-    existing_emails = set(str(p[0]).strip().lower() for p in db.query(Professor.email).all() if p[0])
     
     for _, r in df.iterrows():
         if pd.isna(r['nome']) or pd.isna(r['email']):
@@ -62,8 +61,25 @@ def processar_excel_professores(df, db):
         if not nome_val or not email_val:
             continue
             
-        if email_val not in existing_emails:
-            on_val = limpar_valor_excel(r['onibus']) if 'onibus' in df.columns else None
+        on_val = limpar_valor_excel(r['onibus']) if 'onibus' in df.columns else None
+        
+        # Verifica se o professor já existe (por E-mail)
+        prof_existente = db.query(Professor).filter(
+            func.lower(Professor.email) == email_val
+        ).first()
+        
+        if prof_existente:
+            try:
+                prof_existente.nome = nome_val
+                prof_existente.viagem = limpar_valor_excel(r['viagem'])
+                if 'onibus' in df.columns:
+                    prof_existente.onibus = on_val
+                db.commit()
+                count += 1
+            except Exception:
+                db.rollback()
+                duplicates_skipped += 1
+        else:
             try:
                 novo_prof = Professor(
                     nome=nome_val,
@@ -73,13 +89,10 @@ def processar_excel_professores(df, db):
                 )
                 db.add(novo_prof)
                 db.commit()
-                existing_emails.add(email_val)
                 count += 1
             except Exception:
                 db.rollback()
                 duplicates_skipped += 1
-        else:
-            duplicates_skipped += 1
             
     return count, duplicates_skipped
 
@@ -91,8 +104,6 @@ def processar_excel_alunos(df, db):
         
     count = 0
     duplicates_skipped = 0
-    existing_ras = set(str(a[0]).strip().lower() for a in db.query(Aluno.ra).all() if a[0])
-    existing_emails = set(str(a[0]).strip().lower() for a in db.query(Aluno.email).all() if a[0])
     
     for _, r in df.iterrows():
         if pd.isna(r['nome']) or pd.isna(r['ra']) or pd.isna(r['email']):
@@ -105,8 +116,27 @@ def processar_excel_alunos(df, db):
         if not nome_val or not ra_val or not email_val:
             continue
             
-        if ra_val.lower() not in existing_ras and email_val not in existing_emails:
-            on_val = limpar_valor_excel(r['onibus']) if 'onibus' in df.columns else None
+        on_val = limpar_valor_excel(r['onibus']) if 'onibus' in df.columns else None
+        
+        # Verifica se o aluno já existe (por RA ou E-mail)
+        aluno_existente = db.query(Aluno).filter(
+            (func.lower(Aluno.ra) == ra_val.lower()) | 
+            (func.lower(Aluno.email) == email_val)
+        ).first()
+        
+        if aluno_existente:
+            try:
+                aluno_existente.nome = nome_val
+                aluno_existente.ano = limpar_valor_excel(r['ano'])
+                aluno_existente.viagem_destino = limpar_valor_excel(r['viagem_destino'])
+                if 'onibus' in df.columns:
+                    aluno_existente.onibus = on_val
+                db.commit()
+                count += 1
+            except Exception:
+                db.rollback()
+                duplicates_skipped += 1
+        else:
             try:
                 novo_aluno = Aluno(
                     nome=nome_val,
@@ -118,14 +148,10 @@ def processar_excel_alunos(df, db):
                 )
                 db.add(novo_aluno)
                 db.commit()
-                existing_ras.add(ra_val.lower())
-                existing_emails.add(email_val)
                 count += 1
             except Exception:
                 db.rollback()
                 duplicates_skipped += 1
-        else:
-            duplicates_skipped += 1
             
     return count, duplicates_skipped
 
