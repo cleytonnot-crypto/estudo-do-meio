@@ -408,7 +408,7 @@ if st.query_params.get("feedback") == "abrir":
         def feedback_dialog():
             st.write("Ajude-nos a melhorar o sistema! Descreva o erro ou a sugestão abaixo.")
             tipo = st.selectbox("Tipo de Reporte:", ["Erro / Bug", "Sugestão", "Dúvida", "Outro"])
-            secao = st.selectbox("Seção Relacionada:", ["Geral", "Registrar Ocorrência", "Dashboard da Coordenação", "Administração"])
+            secao = st.selectbox("Seção Relacionada:", ["Geral", "Registrar Ocorrência", "Dashboard", "Administração"])
             nome = st.text_input("Seu Nome (Opcional):", placeholder="Anônimo")
             descricao = st.text_area("Descrição Detalhada:", placeholder="Escreva aqui...")
             
@@ -441,7 +441,7 @@ if st.query_params.get("feedback") == "abrir":
         with st.form("form_feedback_fallback"):
             st.write("Ajude-nos a melhorar o sistema! Descreva o erro ou a sugestão abaixo.")
             tipo = st.selectbox("Tipo de Reporte:", ["Erro / Bug", "Sugestão", "Dúvida", "Outro"])
-            secao = st.selectbox("Seção Relacionada:", ["Geral", "Registrar Ocorrência", "Dashboard da Coordenação", "Administração"])
+            secao = st.selectbox("Seção Relacionada:", ["Geral", "Registrar Ocorrência", "Dashboard", "Administração"])
             nome = st.text_input("Seu Nome (Opcional):", placeholder="Anônimo")
             descricao = st.text_area("Descrição Detalhada:", placeholder="Escreva aqui...")
             
@@ -549,8 +549,8 @@ with col_m1:
         st.session_state.selection = '📝 Registrar Ocorrência'
         st.rerun()
 with col_m2:
-    if st.button("📊 Dashboard da Coordenação", use_container_width=True, type="primary" if st.session_state.selection == '📊 Dashboard da Coordenação' else "secondary"):
-        st.session_state.selection = '📊 Dashboard da Coordenação'
+    if st.button("📊 Dashboard", use_container_width=True, type="primary" if st.session_state.selection == '📊 Dashboard' else "secondary"):
+        st.session_state.selection = '📊 Dashboard'
         st.rerun()
 with col_m3:
     if st.button("⚙️ Administração", use_container_width=True, type="primary" if st.session_state.selection == '⚙️ Administração' else "secondary"):
@@ -740,7 +740,7 @@ if selection == '📝 Registrar Ocorrência':
 </p>
 </div>""", unsafe_allow_html=True)
 
-elif selection == '📊 Dashboard da Coordenação':
+elif selection == '📊 Dashboard':
     st.title("📊 Dashboard de Monitoramento Pedagógico")
     st.write("Visão consolidada das ocorrências registradas para coordenação, acompanhamento em tempo real e exportação de relatórios.")
     
