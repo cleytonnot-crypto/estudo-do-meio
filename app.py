@@ -689,6 +689,25 @@ elif selection == '📊 Dashboard da Coordenação':
             df_destino.columns = ["Destino", "Registros"]
             st.bar_chart(df_destino.set_index("Destino"), color="#10b981")
             
+        col_g3, col_g4 = st.columns(2)
+        with col_g3:
+            st.subheader("🎓 Ocorrências por Turma/Série")
+            df_turma = df_oco["Ano/Turma"].value_counts().reset_index()
+            df_turma.columns = ["Ano/Turma", "Registros"]
+            st.bar_chart(df_turma.set_index("Ano/Turma"), color="#8b5cf6")
+            
+        with col_g4:
+            st.subheader("👨‍🏫 Ocorrências por Professor")
+            df_prof = df_oco["Registrado por"].value_counts().reset_index()
+            df_prof.columns = ["Professor", "Registros"]
+            st.bar_chart(df_prof.set_index("Professor"), color="#ec4899")
+            
+        st.subheader("📈 Volume de Registros por Dia")
+        df_oco_data = df_oco.copy()
+        df_oco_data["Data"] = pd.to_datetime(df_oco_data["data_hora_raw"]).dt.date
+        df_datas = df_oco_data.groupby("Data").size().reset_index(name="Registros")
+        st.line_chart(df_datas.set_index("Data"), color="#f59e0b")
+        
         st.markdown("---")
         
         # Ranking de Ocorrências (Mais frequentes de AA e CS)
