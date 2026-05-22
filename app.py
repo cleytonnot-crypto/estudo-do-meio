@@ -969,33 +969,45 @@ elif selection == '⚙️ Administração':
                 mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
             )
             
-            uploaded_p_file = st.file_uploader("Upload da Lista de Professores", type=['xlsx'], key='up_prof_p')
+            uploaded_p_file = st.file_uploader("Upload da Lista de Professores", type=['xlsx', 'csv'], key='up_prof_p')
             if uploaded_p_file:
                 try:
-                    xls_p = pd.ExcelFile(uploaded_p_file)
-                    sheet_names_p = xls_p.sheet_names
-                    if len(sheet_names_p) > 1:
-                        selected_sheet_p = st.selectbox(
-                            "Selecione a aba (planilha) dos Professores:", 
-                            sheet_names_p, 
-                            key='sheet_prof_sel'
-                        )
-                        btn_import = st.button("Confirmar e Importar Planilha", key="btn_import_prof")
-                    else:
-                        selected_sheet_p = sheet_names_p[0]
+                    is_csv = uploaded_p_file.name.lower().endswith('.csv')
+                    if is_csv:
+                        selected_sheet_p = "CSV"
                         btn_import = True
+                        file_key = f"processed_prof_{uploaded_p_file.name}_{uploaded_p_file.size}_csv"
+                    else:
+                        xls_p = pd.ExcelFile(uploaded_p_file)
+                        sheet_names_p = xls_p.sheet_names
+                        if len(sheet_names_p) > 1:
+                            selected_sheet_p = st.selectbox(
+                                "Selecione a aba (planilha) dos Professores:", 
+                                sheet_names_p, 
+                                key='sheet_prof_sel'
+                            )
+                            btn_import = st.button("Confirmar e Importar Planilha", key="btn_import_prof")
+                        else:
+                            selected_sheet_p = sheet_names_p[0]
+                            btn_import = True
+                            
+                        file_key = f"processed_prof_{uploaded_p_file.name}_{uploaded_p_file.size}_{selected_sheet_p}"
                         
-                    file_key = f"processed_prof_{uploaded_p_file.name}_{uploaded_p_file.size}_{selected_sheet_p}"
                     if file_key not in st.session_state:
                         if btn_import:
                             try:
-                                df = pd.read_excel(uploaded_p_file, sheet_name=selected_sheet_p)
+                                if is_csv:
+                                    uploaded_p_file.seek(0)
+                                    df = pd.read_csv(uploaded_p_file, sep=None, engine='python')
+                                else:
+                                    df = pd.read_excel(xls_p, sheet_name=selected_sheet_p)
+                                    
                                 with get_db() as db:
                                     count, duplicates_skipped = processar_excel_professores(df, db)
                                 st.session_state[file_key] = (count, duplicates_skipped)
                                 st.rerun()
                             except Exception as e:
-                                st.error(f"Erro ao processar: {e}")
+                                st.error(f"Erro ao processar arquivo: {e}")
                         else:
                             st.info("Clique no botão acima para confirmar a importação da aba selecionada.")
                     
@@ -1006,7 +1018,7 @@ elif selection == '⚙️ Administração':
                         else:
                             st.success(f"✅ {count} novos professores cadastrados!")
                 except Exception as e:
-                    st.error(f"Erro ao ler arquivo Excel: {e}")
+                    st.error(f"Erro ao ler arquivo: {e}")
                     
         with col_import_a:
             st.markdown("#### 🎓 Importação de Alunos")
@@ -1019,33 +1031,45 @@ elif selection == '⚙️ Administração':
                 mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
             )
             
-            uploaded_a_file = st.file_uploader("Upload da Lista de Alunos", type=['xlsx'], key='up_aluno_a')
+            uploaded_a_file = st.file_uploader("Upload da Lista de Alunos", type=['xlsx', 'csv'], key='up_aluno_a')
             if uploaded_a_file:
                 try:
-                    xls_a = pd.ExcelFile(uploaded_a_file)
-                    sheet_names_a = xls_a.sheet_names
-                    if len(sheet_names_a) > 1:
-                        selected_sheet_a = st.selectbox(
-                            "Selecione a aba (planilha) dos Alunos:", 
-                            sheet_names_a, 
-                            key='sheet_aluno_sel'
-                        )
-                        btn_import = st.button("Confirmar e Importar Planilha", key="btn_import_aluno")
-                    else:
-                        selected_sheet_a = sheet_names_a[0]
+                    is_csv = uploaded_a_file.name.lower().endswith('.csv')
+                    if is_csv:
+                        selected_sheet_a = "CSV"
                         btn_import = True
+                        file_key = f"processed_aluno_{uploaded_a_file.name}_{uploaded_a_file.size}_csv"
+                    else:
+                        xls_a = pd.ExcelFile(uploaded_a_file)
+                        sheet_names_a = xls_a.sheet_names
+                        if len(sheet_names_a) > 1:
+                            selected_sheet_a = st.selectbox(
+                                "Selecione a aba (planilha) dos Alunos:", 
+                                sheet_names_a, 
+                                key='sheet_aluno_sel'
+                            )
+                            btn_import = st.button("Confirmar e Importar Planilha", key="btn_import_aluno")
+                        else:
+                            selected_sheet_a = sheet_names_a[0]
+                            btn_import = True
+                            
+                        file_key = f"processed_aluno_{uploaded_a_file.name}_{uploaded_a_file.size}_{selected_sheet_a}"
                         
-                    file_key = f"processed_aluno_{uploaded_a_file.name}_{uploaded_a_file.size}_{selected_sheet_a}"
                     if file_key not in st.session_state:
                         if btn_import:
                             try:
-                                df = pd.read_excel(uploaded_a_file, sheet_name=selected_sheet_a)
+                                if is_csv:
+                                    uploaded_a_file.seek(0)
+                                    df = pd.read_csv(uploaded_a_file, sep=None, engine='python')
+                                else:
+                                    df = pd.read_excel(xls_a, sheet_name=selected_sheet_a)
+                                    
                                 with get_db() as db:
                                     count, duplicates_skipped = processar_excel_alunos(df, db)
                                 st.session_state[file_key] = (count, duplicates_skipped)
                                 st.rerun()
                             except Exception as e:
-                                st.error(f"Erro ao processar: {e}")
+                                st.error(f"Erro ao processar arquivo: {e}")
                         else:
                             st.info("Clique no botão acima para confirmar a importação da aba selecionada.")
                     
@@ -1056,7 +1080,7 @@ elif selection == '⚙️ Administração':
                         else:
                             st.success(f"✅ {count} novos alunos cadastrados!")
                 except Exception as e:
-                    st.error(f"Erro ao ler arquivo Excel: {e}")
+                    st.error(f"Erro ao ler arquivo: {e}")
                     
     with admin_tab4:
         st.subheader("💬 Feedbacks, Erros e Sugestões Reportados")
