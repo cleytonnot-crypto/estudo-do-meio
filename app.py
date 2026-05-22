@@ -209,28 +209,34 @@ st.markdown("""
         font-weight: 600;
     }
     
-    /* "Acesso Rápido" Container Dark Theme (Aula del Futuro) */
-    div[data-testid="stVerticalBlockBorderWrapper"]:has(.acesso-rapido-hook) {
+    /* "Acesso Rápido" Container Dark Theme (Aula del Futuro) - Sem usar :has() */
+    .main .block-container > div > div.element-container:nth-child(2) div[data-testid="stVerticalBlockBorderWrapper"],
+    .main .block-container > div > div.element-container:nth-child(2) > div {
         background-color: #1e2128 !important;
         border-radius: 16px !important;
         border: none !important;
-        padding: 10px !important;
+        padding: 5px !important;
         box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1) !important;
     }
     
+    .main .block-container > div > div.element-container:nth-child(2) h4 {
+        color: #ffffff !important;
+        margin-left: 15px !important;
+    }
+    
     /* Botões dentro do "Acesso Rápido" */
-    div[data-testid="stVerticalBlockBorderWrapper"]:has(.acesso-rapido-hook) button[kind="primary"] {
+    .main .block-container > div > div.element-container:nth-child(2) button[kind="primary"] {
         background-color: #ffc107 !important;
         color: #1e2128 !important;
         border: none !important;
         border-radius: 12px !important;
         height: 110px !important;
         font-weight: 700 !important;
-        font-size: 1.05rem !important;
+        font-size: 1.1rem !important;
         box-shadow: 0 4px 6px rgba(0,0,0,0.1) !important;
     }
     
-    div[data-testid="stVerticalBlockBorderWrapper"]:has(.acesso-rapido-hook) button[kind="secondary"] {
+    .main .block-container > div > div.element-container:nth-child(2) button[kind="secondary"] {
         background-color: #2c303a !important;
         color: #f8fafc !important;
         border: 1px solid #3f4451 !important;
@@ -242,11 +248,18 @@ st.markdown("""
         transition: all 0.2s ease-in-out;
     }
     
-    div[data-testid="stVerticalBlockBorderWrapper"]:has(.acesso-rapido-hook) button[kind="secondary"]:hover {
+    .main .block-container > div > div.element-container:nth-child(2) button[kind="secondary"]:hover {
         background-color: #3f4451 !important;
         border-color: #4b5563 !important;
         color: #ffffff !important;
         transform: translateY(-2px);
+    }
+
+    /* Força a quebra de linha nos botões para o ícone ficar no topo */
+    .main .block-container > div > div.element-container:nth-child(2) button p {
+        white-space: pre-wrap !important;
+        text-align: center !important;
+        line-height: 1.4 !important;
     }
     
     .stAlert {
@@ -472,16 +485,16 @@ with st.container(border=True):
     
     col_m1, col_m2, col_m3 = st.columns(3)
     with col_m1:
-        # A quebra de linha com espaços simula o ícone no topo do botão
-        if st.button("📝\\nRegistrar", use_container_width=True, type="primary" if st.session_state.selection == '📝 Registrar Ocorrência' else "secondary"):
+        # A quebra de linha natural agora funcionará com o white-space: pre-wrap
+        if st.button("📝\nRegistrar", use_container_width=True, type="primary" if st.session_state.selection == '📝 Registrar Ocorrência' else "secondary"):
             st.session_state.selection = '📝 Registrar Ocorrência'
             st.rerun()
     with col_m2:
-        if st.button("📊\\nDashboard", use_container_width=True, type="primary" if st.session_state.selection == '📊 Dashboard da Coordenação' else "secondary"):
+        if st.button("📊\nDashboard", use_container_width=True, type="primary" if st.session_state.selection == '📊 Dashboard da Coordenação' else "secondary"):
             st.session_state.selection = '📊 Dashboard da Coordenação'
             st.rerun()
     with col_m3:
-        if st.button("⚙️\\nAdministração", use_container_width=True, type="primary" if st.session_state.selection == '⚙️ Administração' else "secondary"):
+        if st.button("⚙️\nAdministração", use_container_width=True, type="primary" if st.session_state.selection == '⚙️ Administração' else "secondary"):
             st.session_state.selection = '⚙️ Administração'
             st.rerun()
 
@@ -946,23 +959,18 @@ elif selection == '📊 Dashboard da Coordenação':
                     cs_html = f'<p style="margin: 2px 0; color: #10b981; font-size: 0.9rem;"><b>CS (-{desc_cs:.1f} pts):</b> {cs_val}</p>' if cs_val and cs_val.lower() != 'nan' and cs_val.strip() else ''
                     obs_val = str(row.get("Observações / Detalhamento", ""))
                     obs = obs_val if obs_val.lower() != 'nan' else ''
-
+                    
                     card_html = f"""<div class="custom-card" style="margin-bottom: 15px; padding: 15px;">
-    <div style="display: flex; justify-content: space-between; margin-bottom: 8px; font-size: 0.85rem;">
-    <span style="font-weight: 600; color: #334155;">🎓 {row["Aluno"]} <span style="color:#94a3b8; font-weight:normal;">({row["Ano/Turma"]})</span></span>
-    <span style="color: #64748b;">📅 {row["Data/Hora"]}</span>
-    </div>
-    <div style="font-size: 0.85rem; color: #64748b; margin-bottom: 10px;">
-    📍 {row["Destino"]} &nbsp;|&nbsp; 🚌 {row["Ônibus"]} &nbsp;|&nbsp; 👤 Prof: {row["Registrado por"]}
-    </div>
-    {aa_html}
-    {cs_html}
-    <p style="margin: 8px 0 0 0; font-size: 0.95rem; color: #0f172a; border-top: 1px dashed #e2e8f0; padding-top: 8px;">
-    <i>"{obs}"</i>
-    </p>
-    </div>"""
-                    st.markdown(card_html, unsafe_allow_html=True)
-
+<div style="display: flex; justify-content: space-between; margin-bottom: 8px; font-size: 0.85rem;">
+<span style="font-weight: 600; color: #334155;">🎓 {row["Aluno"]} <span style="color:#94a3b8; font-weight:normal;">({row["Ano/Turma"]})</span></span>
+<span style="color: #64748b;">📅 {row["Data/Hora"]}</span></div>
+<div style="font-size: 0.85rem; color: #64748b; margin-bottom: 10px;">
+📍 {row["Destino"]} &nbsp;|&nbsp; 🚌 {row["Ônibus"]} &nbsp;|&nbsp; 👤 Prof: {row["Registrado por"]}</div>
+{aa_html}{cs_html}
+<p style="margin: 8px 0 0 0; font-size: 0.95rem; color: #0f172a; border-top: 1px dashed #e2e8f0; padding-top: 8px;">
+<i>"{obs}"</i></p></div>"""
+                    # Removemos as quebras de linha que confundem o Markdown
+                    st.markdown(card_html.replace('\n', ''), unsafe_allow_html=True)
             # Exportação para Excel (sem coluna auxiliar)
             buffer = io.BytesIO()
             with pd.ExcelWriter(buffer, engine='openpyxl') as writer:
