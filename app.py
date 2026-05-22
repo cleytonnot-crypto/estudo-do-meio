@@ -536,7 +536,7 @@ def criar_template_excel(colunas):
     return output.getvalue()
 
 # Navegação Principal (Banner Superior - Cards)
-st.markdown("<h2 style='text-align: center; color: #1e293b; margin-bottom: 20px;'>SISP - Monitoramento Pedagógico</h2>", unsafe_allow_html=True)
+st.markdown("<h2 style='text-align: center; color: #1e293b; margin-bottom: 20px;'>Estudo do Meio</h2>", unsafe_allow_html=True)
 
 if 'selection' not in st.session_state:
     st.session_state.selection = '📝 Registrar Ocorrência'
