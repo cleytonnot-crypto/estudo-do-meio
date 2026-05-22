@@ -79,6 +79,9 @@ class CriterioRubrica(Base):
     tipo = Column(String(2), nullable=False) # "AA" or "CS"
     descricao = Column(Text, nullable=False)
     desconto_padrao = Column(Float, nullable=False, default=0.2)
+    desconto_leve = Column(Float, nullable=False, default=0.1)
+    desconto_moderado = Column(Float, nullable=False, default=0.3)
+    desconto_grave = Column(Float, nullable=False, default=0.5)
     
     rubrica = relationship("Rubrica", back_populates="criterios")
 
@@ -233,6 +236,22 @@ def inicializar_banco():
                         print(f"Coluna '{col}' adicionada com sucesso à tabela 'avaliacoes'.")
                     except Exception as e:
                         print(f"Erro ao adicionar coluna '{col}' na tabela 'avaliacoes': {e}")
+
+        # Colunas necessárias para 'criterios_rubrica'
+        colunas_criterios = {
+            "desconto_leve": "FLOAT DEFAULT 0.1",
+            "desconto_moderado": "FLOAT DEFAULT 0.3",
+            "desconto_grave": "FLOAT DEFAULT 0.5"
+        }
+        with engine.connect() as conn:
+            colunas_existentes_crit = [info[1] for info in conn.execute(text("PRAGMA table_info(criterios_rubrica)")).fetchall()]
+            for col, tipo in colunas_criterios.items():
+                if col not in colunas_existentes_crit:
+                    try:
+                        conn.execute(text(f"ALTER TABLE criterios_rubrica ADD COLUMN {col} {tipo}"))
+                        print(f"Coluna '{col}' adicionada com sucesso à tabela 'criterios_rubrica'.")
+                    except Exception as e:
+                        print(f"Erro ao adicionar coluna '{col}' na tabela 'criterios_rubrica': {e}")
     finally:
         db.close()
     print("Banco de dados inicializado com sucesso!")

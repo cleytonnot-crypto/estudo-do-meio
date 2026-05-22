@@ -446,8 +446,24 @@ def test_rubrica_database_crud(db_session):
     assert r_db.termos_mapeamento == "1ª SÉRIE; 1ª SERIE; 1EM"
     
     # 2. Add Criteria
-    crit1 = CriterioRubrica(rubrica_id=r_db.id, tipo="AA", descricao="Falta de foco", desconto_padrao=0.5)
-    crit2 = CriterioRubrica(rubrica_id=r_db.id, tipo="CS", descricao="Conversa excessiva", desconto_padrao=0.25)
+    crit1 = CriterioRubrica(
+        rubrica_id=r_db.id,
+        tipo="AA",
+        descricao="Falta de foco",
+        desconto_padrao=0.5,
+        desconto_leve=0.2,
+        desconto_moderado=0.5,
+        desconto_grave=0.8
+    )
+    crit2 = CriterioRubrica(
+        rubrica_id=r_db.id,
+        tipo="CS",
+        descricao="Conversa excessiva",
+        desconto_padrao=0.25,
+        desconto_leve=0.1,
+        desconto_moderado=0.25,
+        desconto_grave=0.4
+    )
     db_session.add_all([crit1, crit2])
     db_session.commit()
     
@@ -458,9 +474,22 @@ def test_rubrica_database_crud(db_session):
     assert "AA" in types
     assert "CS" in types
     
+    c1_db = next(c for c in  criterios if c.tipo == "AA")
+    assert c1_db.desconto_leve == 0.2
+    assert c1_db.desconto_moderado == 0.5
+    assert c1_db.desconto_grave == 0.8
+    
+    c2_db = next(c for c in criterios if c.tipo == "CS")
+    assert c2_db.desconto_leve == 0.1
+    assert c2_db.desconto_moderado == 0.25
+    assert c2_db.desconto_grave == 0.4
+    
     # 3. Update
     r_db.max_aa = 1.5
     crit1.desconto_padrao = 0.4
+    crit1.desconto_leve = 0.15
+    crit1.desconto_moderado = 0.4
+    crit1.desconto_grave = 0.7
     db_session.commit()
     
     # Verify update
@@ -468,6 +497,9 @@ def test_rubrica_database_crud(db_session):
     assert r_db_updated.max_aa == 1.5
     crit1_db = db_session.query(CriterioRubrica).filter(CriterioRubrica.descricao == "Falta de foco").first()
     assert crit1_db.desconto_padrao == 0.4
+    assert crit1_db.desconto_leve == 0.15
+    assert crit1_db.desconto_moderado == 0.4
+    assert crit1_db.desconto_grave == 0.7
     
     # 4. Delete
     db_session.delete(r_db_updated)
@@ -476,6 +508,71 @@ def test_rubrica_database_crud(db_session):
     # Verify cascading delete of criteria
     assert db_session.query(Rubrica).filter(Rubrica.nome == "1ª série - Teste").first() is None
     assert db_session.query(CriterioRubrica).filter(CriterioRubrica.rubrica_id == r_db.id).first() is None
+
+
+def test_registrar_ocorrencia_com_gravidades(db_session):
+    """Testa o registro de uma ocorrência associando gravidades customizadas e calculando a pontuação correta."""
+    from database import Professor, Aluno, Rubrica, CriterioRubrica, Avaliacao
+    
+    # 1. Setup mock models
+    prof = Professor(nome="Prof Teste Gravidade", email="prof_gravidade@teste.com", viagem="BSB")
+    aluno = Aluno(nome="Aluno Teste Gravidade", ra="123_GRAV", email="aluno_gravidade@teste.com", ano="3ª série", viagem_destino="BSB")
+    db_session.add_all([prof, aluno])
+    db_session.commit()
+    
+    rubrica = Rubrica(nome="3ª série - Teste", max_aa=1.0, max_cs=2.0)
+    db_session.add(rubrica)
+    db_session.commit()
+    
+    crit_aa = CriterioRubrica(
+        rubrica_id=rubrica.id,
+        tipo="AA",
+        descricao="Desatenção",
+        desconto_padrao=0.2,
+        desconto_leve=0.1,
+        desconto_moderado=0.3,
+        desconto_grave=0.5
+    )
+    crit_cs = CriterioRubrica(
+        rubrica_id=rubrica.id,
+        tipo="CS",
+        descricao="Conversa",
+        desconto_padrao=0.3,
+        desconto_leve=0.2,
+        desconto_moderado=0.4,
+        desconto_grave=0.6
+    )
+    db_session.add_all([crit_aa, crit_cs])
+    db_session.commit()
+    
+    # Simulate selecting "Moderado" for AA and "Grave" for CS
+    selected_aa_grav = "Moderado"
+    selected_cs_grav = "Grave"
+    
+    desc_aa = crit_aa.desconto_moderado
+    desc_cs = crit_cs.desconto_grave
+    
+    nova_oco = Avaliacao(
+        professor_id=prof.id,
+        aluno_id=aluno.id,
+        atitude_aa=f"{crit_aa.descricao} ({selected_aa_grav})",
+        comportamento_cs=f"{crit_cs.descricao} ({selected_cs_grav})",
+        desconto_aa=desc_aa,
+        desconto_cs=desc_cs,
+        observacoes="Registrado com gravidades diferentes"
+    )
+    db_session.add(nova_oco)
+    db_session.commit()
+    
+    # Verify the record
+    oco_db = db_session.query(Avaliacao).filter(Avaliacao.aluno_id == aluno.id).first()
+    assert oco_db is not None
+    assert oco_db.atitude_aa == "Desatenção (Moderado)"
+    assert oco_db.comportamento_cs == "Conversa (Grave)"
+    assert oco_db.desconto_aa == 0.3
+    assert oco_db.desconto_cs == 0.6
+    assert oco_db.observacoes == "Registrado com gravidades diferentes"
+
 
 
 
