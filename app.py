@@ -476,7 +476,8 @@ if selection == '📝 Registrar Ocorrência':
                 
             alunos_filtrados = alunos
             if filtrar_mesmo_destino and prof_viagem:
-                alunos_filtrados = [a for a in alunos_filtrados if a.viagem_destino == prof_viagem]
+                prof_v_clean = str(prof_viagem).strip().upper()
+                alunos_filtrados = [a for a in alunos_filtrados if a.viagem_destino and str(a.viagem_destino).strip().upper() == prof_v_clean]
             if onibus_filtro != "Todos":
                 alunos_filtrados = [a for a in alunos_filtrados if a.onibus == onibus_filtro]
                 
