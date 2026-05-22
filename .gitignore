@@ -1,0 +1,19 @@
+# Bancos de dados locais
+banco_viagens.db
+
+# Arquivos de teste e planilhas geradas
+dados_teste_alunos.xlsx
+dados_teste_professores.xlsx
+
+# Caches do Python
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Configurações do Streamlit local
+.streamlit/
+
+# Testes e relatórios
+.pytest_cache/
+.coverage
+htmlcov/
