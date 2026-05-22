@@ -5,7 +5,7 @@ import os
 import unicodedata
 from datetime import datetime
 from contextlib import contextmanager
-from database import inicializar_banco, SessionLocal, Professor, Aluno, Avaliacao, Feedback, Rubrica, CriterioRubrica
+from database import inicializar_banco, SessionLocal, Professor, Aluno, Avaliacao, Feedback, Rubrica, CriterioRubrica, Configuracao
 from sqlalchemy import func
 
 def normalizar_coluna(col):
@@ -829,9 +829,14 @@ if selection == '📝 Registrar Ocorrência':
                                 cs_selecionados.append(f"{crit} ({grav_label})")
                                 total_desconto_cs += desc
                                 
+                    with get_db() as db:
+                        config_obs = db.query(Configuracao).filter(Configuracao.chave == "observacoes_obrigatorias").first()
+                        is_obs_obrigatorio = config_obs.valor.lower() == "true" if config_obs else False
+                        
                     st.markdown("<br>", unsafe_allow_html=True)
+                    obs_label = "📝 Detalhamento e Contextualização do Ocorrido (Obrigatório):" if is_obs_obrigatorio else "📝 Detalhamento e Contextualização do Ocorrido (Opcional):"
                     observacoes = st.text_area(
-                        "📝 Detalhamento e Contextualização do Ocorrido (Obrigatório):", 
+                        obs_label, 
                         placeholder="Descreva as ações, horários e contexto para justificar os critérios assinalados."
                     )
                     
@@ -865,8 +870,8 @@ if selection == '📝 Registrar Ocorrência':
                     if st.button("💾 Registrar Ocorrência", type="primary", use_container_width=True):
                         if not aa_selecionados and not cs_selecionados:
                             st.error("❌ Erro: Selecione ao menos um critério de AA ou CS.")
-                        elif not observacoes.strip():
-                            st.error("❌ Erro: O detalhamento é obrigatório.")
+                        elif is_obs_obrigatorio and not observacoes.strip():
+                            st.error("❌ Erro: O detalhamento é obrigatório conforme configuração do sistema.")
                         elif not confirmar_duplicidade:
                             st.error("❌ Erro: A ocorrência é idêntica à anterior. Confirme a duplicidade marcando a caixa acima.")
                         else:
@@ -1353,12 +1358,13 @@ elif selection == '⚙️ Administração':
             st.session_state.admin_autenticado = False
             st.rerun()
     
-    admin_tab1, admin_tab2, admin_tab3, admin_tab4, admin_tab5, admin_tab6 = st.tabs([
+    admin_tab1, admin_tab2, admin_tab3, admin_tab4, admin_tab5, admin_tab6, admin_tab7 = st.tabs([
         "📋 Registros Atuais", 
         "➕ Cadastro Manual", 
         "📤 Importação em Lote (.xlsx)", 
         "💬 Feedbacks e Sugestões",
         "⚙️ Gerenciar Rubricas",
+        "🔧 Configurações Globais",
         "🚨 Limpeza de Dados"
     ])
     
@@ -2044,6 +2050,35 @@ elif selection == '⚙️ Administração':
                             st.error(f"Erro ao salvar critérios: {e}")
 
     with admin_tab6:
+        st.subheader("🔧 Configurações Globais")
+        st.write("Ajuste opções que afetam o funcionamento de toda a aplicação.")
+        
+        with get_db() as db:
+            config_obs = db.query(Configuracao).filter(Configuracao.chave == "observacoes_obrigatorias").first()
+            if not config_obs:
+                config_obs = Configuracao(chave="observacoes_obrigatorias", valor="false")
+                db.add(config_obs)
+                db.commit()
+            
+            is_obs_obrigatorio = config_obs.valor.lower() == "true"
+            
+            with st.container(border=True):
+                st.markdown("#### Configurações de Lançamento")
+                novo_valor_obs = st.toggle(
+                    "Tornar o campo 'Detalhamento' obrigatório?", 
+                    value=is_obs_obrigatorio,
+                    help="Se ativado, o professor será impedido de registrar uma ocorrência sem preencher o detalhamento."
+                )
+                
+                if novo_valor_obs != is_obs_obrigatorio:
+                    config_obs.valor = "true" if novo_valor_obs else "false"
+                    db.commit()
+                    st.success("Configuração atualizada com sucesso!")
+                    import time
+                    time.sleep(1)
+                    st.rerun()
+
+    with admin_tab7:
         st.subheader("🚨 Perigo: Limpeza do Banco de Dados")
         st.warning("Essas ações são permanentes e não podem ser desfeitas. Use com cautela durante testes.")
         

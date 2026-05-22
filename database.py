@@ -60,6 +60,13 @@ class Feedback(Base):
     data_hora = Column(DateTime, default=datetime.now)
     resolvido = Column(Integer, default=0)  # 0 = Pendente, 1 = Resolvido
 
+class Configuracao(Base):
+    __tablename__ = "configuracoes"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    chave = Column(String(50), unique=True, nullable=False)
+    valor = Column(String(255), nullable=False)
+
 class Rubrica(Base):
     __tablename__ = "rubricas"
     
@@ -190,6 +197,17 @@ def inicializar_banco():
                         desconto_padrao=desc_padrao
                     )
                     db.add(crit)
+            db.commit()
+
+        # Seeding inicial de Configurações
+        try:
+            config_count = db.query(Configuracao).count()
+        except Exception:
+            config_count = 0
+            
+        if config_count == 0:
+            print("Populando configurações padrão...")
+            db.add(Configuracao(chave="observacoes_obrigatorias", valor="false"))
             db.commit()
 
         # Colunas necessárias para 'alunos'
