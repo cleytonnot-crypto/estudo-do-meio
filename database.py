@@ -1,10 +1,13 @@
+import os
 from sqlalchemy import create_engine, Column, Integer, String, ForeignKey, DateTime, Text, text
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker, relationship
 from datetime import datetime
 
 # Configuração do Engine e Base
-DB_URL = "sqlite:///banco_viagens.db"
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+db_path = os.path.join(BASE_DIR, "banco_viagens.db")
+DB_URL = f"sqlite:///{db_path}"
 engine = create_engine(DB_URL, connect_args={"check_same_thread": False})
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 Base = declarative_base()
