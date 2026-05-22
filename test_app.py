@@ -574,6 +574,56 @@ def test_registrar_ocorrencia_com_gravidades(db_session):
     assert oco_db.observacoes == "Registrado com gravidades diferentes"
 
 
+def test_remover_acentos_normalization():
+    """Testa a função remover_acentos para verificar se remove acentuação, espaços adicionais e padroniza caixa alta."""
+    from app import remover_acentos
+    
+    assert remover_acentos("Brasília") == "BRASILIA"
+    assert remover_acentos("brasília") == "BRASILIA"
+    assert remover_acentos("  Brasília  ") == "BRASILIA"
+    assert remover_acentos("Voo A") == "VOO A"
+    assert remover_acentos("ônibus 1") == "ONIBUS 1"
+    assert remover_acentos(None) == ""
+    assert remover_acentos(123) == "123"
+
+
+def test_filtragem_alunos_acento_insensitivo():
+    """Testa se a lógica de filtragem por destino e ônibus funciona de forma insensível a acentos, caixa e espaços."""
+    from app import remover_acentos
+    
+    class MockAluno:
+        def __init__(self, nome, viagem_destino, onibus):
+            self.nome = nome
+            self.viagem_destino = viagem_destino
+            self.onibus = onibus
+
+    alunos = [
+        MockAluno("Aluno 1", "Brasília", "Voo A"),
+        MockAluno("Aluno 2", "BRASILIA", "Voo B"),
+        MockAluno("Aluno 3", "Rio de Janeiro", "ônibus 1"),
+        MockAluno("Aluno 4", None, "Ônibus 1"),
+    ]
+    
+    # Simula filtro do professor com "Brasilia" (sem acento) e "voo a" (minúsculo)
+    prof_viagem = "Brasilia"
+    prof_onibus = "voo a"
+    
+    # 1. Filtro por destino
+    prof_v_norm = remover_acentos(prof_viagem)
+    filtrados_destino = [a for a in alunos if a.viagem_destino and remover_acentos(a.viagem_destino) == prof_v_norm]
+    assert len(filtrados_destino) == 2
+    assert filtrados_destino[0].nome == "Aluno 1"
+    assert filtrados_destino[1].nome == "Aluno 2"
+    
+    # 2. Filtro por ônibus (ex: "ônibus 1" vs "Ônibus 1")
+    prof_o_norm = remover_acentos("Ônibus 1")
+    filtrados_onibus = [a for a in alunos if a.onibus and remover_acentos(a.onibus) == prof_o_norm]
+    assert len(filtrados_onibus) == 2
+    assert filtrados_onibus[0].nome == "Aluno 3"
+    assert filtrados_onibus[1].nome == "Aluno 4"
+
+
+
 
 
 

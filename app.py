@@ -22,6 +22,13 @@ def normalizar_coluna(col):
     }
     return synonyms.get(col_norm, col_norm)
 
+def remover_acentos(txt):
+    if not txt:
+        return ""
+    if not isinstance(txt, str):
+        txt = str(txt)
+    return unicodedata.normalize('NFKD', txt).encode('ASCII', 'ignore').decode('utf-8').strip().upper()
+
 def limpar_valor_excel(val):
     if pd.isna(val):
         return None
@@ -677,12 +684,12 @@ if selection == '📝 Registrar Ocorrência':
                 
             alunos_filtrados = alunos
             if filtrar_mesmo_destino and prof_viagem:
-                prof_v_clean = str(prof_viagem).strip().upper()
-                alunos_filtrados = [a for a in alunos_filtrados if a.viagem_destino and str(a.viagem_destino).strip().upper() == prof_v_clean]
+                prof_v_norm = remover_acentos(prof_viagem)
+                alunos_filtrados = [a for a in alunos_filtrados if a.viagem_destino and remover_acentos(a.viagem_destino) == prof_v_norm]
                 
             if filtrar_mesmo_onibus and prof_onibus:
-                prof_o_clean = str(prof_onibus).strip().upper()
-                alunos_filtrados = [a for a in alunos_filtrados if a.onibus and str(a.onibus).strip().upper() == prof_o_clean]
+                prof_o_norm = remover_acentos(prof_onibus)
+                alunos_filtrados = [a for a in alunos_filtrados if a.onibus and remover_acentos(a.onibus) == prof_o_norm]
                 
             if not alunos_filtrados:
                 st.info("ℹ️ Nenhum aluno atende aos filtros de destino e ônibus selecionados.")
