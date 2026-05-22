@@ -211,63 +211,62 @@ st.markdown("""
     
     /* Containers do Dashboard brancos para destacar do fundo cinza geral */
     div[data-testid="stVerticalBlockBorderWrapper"] {
-        background-color: #ffffff;
-        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
-        border: 1px solid #e2e8f0;
-        border-radius: 12px;
+        background-color: #ffffff !important;
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05) !important;
+        border: 1px solid #e2e8f0 !important;
+        border-radius: 12px !important;
     }
 
-    /* "Acesso Rápido" Container Dark Theme (Aula del Futuro) - Posição 3 */
-    .main .block-container > div > div.element-container:nth-child(3) div[data-testid="stVerticalBlockBorderWrapper"],
-    .main .block-container > div > div.element-container:nth-child(3) > div {
+    /* "Acesso Rápido" Container via stHorizontalBlock (Impossível de falhar) */
+    div[data-testid="stHorizontalBlock"]:first-of-type {
         background-color: #1e2128 !important;
+        padding: 30px !important;
         border-radius: 16px !important;
-        border: none !important;
-        padding: 5px !important;
+        flex-wrap: wrap !important;
+        margin-bottom: 25px !important;
         box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1) !important;
     }
     
-    .main .block-container > div > div.element-container:nth-child(3) h4 {
-        color: #ffffff !important;
-        margin-left: 15px !important;
+    div[data-testid="stHorizontalBlock"]:first-of-type::before {
+        content: "⚡ Acesso Rápido";
+        width: 100%;
+        color: #ffffff;
+        font-family: 'Outfit', sans-serif;
+        font-size: 1.3rem;
+        font-weight: 600;
+        margin-bottom: 15px;
+        display: block;
     }
     
     /* Botões dentro do "Acesso Rápido" */
-    .main .block-container > div > div.element-container:nth-child(3) button[kind="primary"] {
+    div[data-testid="stHorizontalBlock"]:first-of-type button[kind="primary"] {
         background-color: #ffc107 !important;
         color: #1e2128 !important;
         border: none !important;
         border-radius: 12px !important;
-        height: 110px !important;
+        height: 80px !important;
         font-weight: 700 !important;
         font-size: 1.1rem !important;
         box-shadow: 0 4px 6px rgba(0,0,0,0.1) !important;
     }
     
-    .main .block-container > div > div.element-container:nth-child(3) button[kind="secondary"] {
+    div[data-testid="stHorizontalBlock"]:first-of-type button[kind="secondary"] {
         background-color: #2c303a !important;
         color: #f8fafc !important;
         border: 1px solid #3f4451 !important;
         border-radius: 12px !important;
-        height: 110px !important;
+        height: 80px !important;
         font-weight: 500 !important;
         font-size: 1.05rem !important;
         box-shadow: 0 4px 6px rgba(0,0,0,0.05) !important;
         transition: all 0.2s ease-in-out;
     }
     
-    .main .block-container > div > div.element-container:nth-child(3) button[kind="secondary"]:hover {
+    div[data-testid="stHorizontalBlock"]:first-of-type button[kind="secondary"]:hover {
         background-color: #3f4451 !important;
         border-color: #4b5563 !important;
         color: #ffffff !important;
         transform: translateY(-2px);
-    }
-
-    /* Força a quebra de linha nos botões para o ícone ficar no topo */
-    .main .block-container > div > div.element-container:nth-child(3) button p {
-        white-space: pre-wrap !important;
-        text-align: center !important;
-        line-height: 1.4 !important;
     }
     
     .stAlert {
@@ -486,25 +485,20 @@ st.markdown("<h2 style='text-align: center; color: #1e293b; margin-bottom: 20px;
 if 'selection' not in st.session_state:
     st.session_state.selection = '📝 Registrar Ocorrência'
 
-with st.container(border=True):
-    # O hook invisível aciona o CSS escuro apenas para este bloco!
-    st.markdown("<span class='acesso-rapido-hook'></span>", unsafe_allow_html=True)
-    st.markdown("<h4 style='color: #ffffff; margin-top: 0; margin-bottom: 15px;'>⚡ Acesso Rápido</h4>", unsafe_allow_html=True)
-    
-    col_m1, col_m2, col_m3 = st.columns(3)
-    with col_m1:
-        # A quebra de linha natural agora funcionará com o white-space: pre-wrap
-        if st.button("📝\nRegistrar", use_container_width=True, type="primary" if st.session_state.selection == '📝 Registrar Ocorrência' else "secondary"):
-            st.session_state.selection = '📝 Registrar Ocorrência'
-            st.rerun()
-    with col_m2:
-        if st.button("📊\nDashboard", use_container_width=True, type="primary" if st.session_state.selection == '📊 Dashboard da Coordenação' else "secondary"):
-            st.session_state.selection = '📊 Dashboard da Coordenação'
-            st.rerun()
-    with col_m3:
-        if st.button("⚙️\nAdministração", use_container_width=True, type="primary" if st.session_state.selection == '⚙️ Administração' else "secondary"):
-            st.session_state.selection = '⚙️ Administração'
-            st.rerun()
+# A remoção do st.container garante que o background dark injetado no stHorizontalBlock ocupe tudo
+col_m1, col_m2, col_m3 = st.columns(3)
+with col_m1:
+    if st.button("📝 Registrar Ocorrência", use_container_width=True, type="primary" if st.session_state.selection == '📝 Registrar Ocorrência' else "secondary"):
+        st.session_state.selection = '📝 Registrar Ocorrência'
+        st.rerun()
+with col_m2:
+    if st.button("📊 Dashboard da Coordenação", use_container_width=True, type="primary" if st.session_state.selection == '📊 Dashboard da Coordenação' else "secondary"):
+        st.session_state.selection = '📊 Dashboard da Coordenação'
+        st.rerun()
+with col_m3:
+    if st.button("⚙️ Administração", use_container_width=True, type="primary" if st.session_state.selection == '⚙️ Administração' else "secondary"):
+        st.session_state.selection = '⚙️ Administração'
+        st.rerun()
 
 selection = st.session_state.selection
 st.markdown("<hr style='margin-top: 5px; margin-bottom: 25px;'>", unsafe_allow_html=True)
