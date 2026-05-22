@@ -776,18 +776,21 @@ elif selection == '⚙️ Administração':
                     if all(col in df.columns for col in expected):
                         count = 0
                         with get_db() as db:
+                            # Carrega emails cadastrados para evitar duplicados locais/banco
+                            existing_emails = set(p[0] for p in db.query(Professor.email).all() if p[0])
+                            
                             for _, r in df.iterrows():
-                                # Ignorar se já existe email
-                                exists = db.query(Professor).filter(Professor.email == str(r['email']).strip()).first()
-                                if not exists:
+                                email_val = str(r['email']).strip()
+                                if email_val not in existing_emails:
                                     on_val = str(r['onibus']).strip() if 'onibus' in df.columns and pd.notna(r['onibus']) else None
                                     novo_prof = Professor(
                                         nome=str(r['nome']).strip(),
-                                        email=str(r['email']).strip(),
+                                        email=email_val,
                                         viagem=str(r['viagem']).strip() if pd.notna(r['viagem']) else None,
                                         onibus=on_val
                                     )
                                     db.add(novo_prof)
+                                    existing_emails.add(email_val)
                                     count += 1
                             db.commit()
                         st.success(f"✅ {count} novos professores cadastrados!")
@@ -816,24 +819,26 @@ elif selection == '⚙️ Administração':
                     if all(col in df.columns for col in expected):
                         count = 0
                         with get_db() as db:
+                            # Carrega RAs e emails cadastrados para evitar duplicados locais/banco
+                            existing_ras = set(a[0] for a in db.query(Aluno.ra).all() if a[0])
+                            existing_emails = set(a[0] for a in db.query(Aluno.email).all() if a[0])
+                            
                             for _, r in df.iterrows():
-                                ra_str = str(r['ra']).strip()
-                                email_str = str(r['email']).strip()
-                                # Ignorar se já existe RA ou email
-                                exists = db.query(Aluno).filter(
-                                    (Aluno.ra == ra_str) | (Aluno.email == email_str)
-                                ).first()
-                                if not exists:
+                                ra_val = str(r['ra']).strip()
+                                email_val = str(r['email']).strip()
+                                if ra_val not in existing_ras and email_val not in existing_emails:
                                     on_val = str(r['onibus']).strip() if 'onibus' in df.columns and pd.notna(r['onibus']) else None
                                     novo_aluno = Aluno(
                                         nome=str(r['nome']).strip(),
-                                        ra=ra_str,
-                                        email=email_str,
+                                        ra=ra_val,
+                                        email=email_val,
                                         ano=str(r['ano']).strip() if pd.notna(r['ano']) else None,
                                         viagem_destino=str(r['viagem_destino']).strip() if pd.notna(r['viagem_destino']) else None,
                                         onibus=on_val
                                     )
                                     db.add(novo_aluno)
+                                    existing_ras.add(ra_val)
+                                    existing_emails.add(email_val)
                                     count += 1
                             db.commit()
                         st.success(f"✅ {count} novos alunos cadastrados!")
