@@ -680,7 +680,7 @@ if selection == '📝 Registrar Ocorrência':
             with col_f1:
                 filtrar_mesmo_destino = st.checkbox("Somente alunos do mesmo destino do professor", value=True)
             with col_f2:
-                filtrar_mesmo_onibus = st.checkbox("Somente alunos do mesmo ônibus do professor", value=True)
+                filtrar_mesmo_onibus = st.checkbox("Somente alunos do mesmo ônibus do professor", value=False)
                 
             alunos_filtrados = alunos
             if filtrar_mesmo_destino and prof_viagem:
