@@ -197,14 +197,14 @@ st.markdown("""
     }
     
     h1 {
-        color: #ffffff;
+        color: #0f172a;
         font-family: 'Outfit', sans-serif;
         font-weight: 700;
         margin-bottom: 1.5rem;
     }
     
     h2, h3, h4, h5 {
-        color: #8257e5;
+        color: #6366f1;
         font-family: 'Outfit', sans-serif;
         font-weight: 600;
     }
@@ -214,32 +214,32 @@ st.markdown("""
     }
     
     .custom-card {
-        background-color: #1a1d24;
+        background-color: #ffffff;
         border-radius: 12px;
         padding: 20px;
-        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.2), 0 2px 4px -1px rgba(0, 0, 0, 0.1);
-        border-left: 5px solid #8257e5;
-        border-top: 1px solid #292d36;
-        border-right: 1px solid #292d36;
-        border-bottom: 1px solid #292d36;
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
+        border-left: 5px solid #6366f1;
+        border-top: 1px solid #e2e8f0;
+        border-right: 1px solid #e2e8f0;
+        border-bottom: 1px solid #e2e8f0;
         margin-bottom: 15px;
     }
     
     .metric-card {
-        background-color: #1a1d24;
+        background-color: #ffffff;
         border-radius: 12px;
         padding: 20px;
-        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.2), 0 2px 4px -1px rgba(0, 0, 0, 0.1);
-        border-left: 5px solid #00e676; /* Verde Esmeralda para métricas */
-        border-top: 1px solid #292d36;
-        border-right: 1px solid #292d36;
-        border-bottom: 1px solid #292d36;
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
+        border-left: 5px solid #10b981; /* Verde Esmeralda para métricas */
+        border-top: 1px solid #e2e8f0;
+        border-right: 1px solid #e2e8f0;
+        border-bottom: 1px solid #e2e8f0;
         margin-bottom: 15px;
     }
     
     .metric-title {
         font-size: 0.85rem;
-        color: #a8a8b3;
+        color: #64748b;
         font-weight: 600;
         text-transform: uppercase;
         letter-spacing: 0.05em;
@@ -247,7 +247,7 @@ st.markdown("""
     
     .metric-value {
         font-size: 1.75rem;
-        color: #ffffff;
+        color: #0f172a;
         font-weight: 700;
         margin-top: 5px;
     }
@@ -426,7 +426,7 @@ selection = st.sidebar.radio("Navegue pelas seções:", menu_options)
 
 # Lógica de exibição baseada na seleção
 if selection == '📝 Registrar Ocorrência':
-    st.markdown("<h1>📝 Registro de Ocorrência <span style='font-size:1.2rem;color:#8257e5;'>(AA & CS)</span></h1>", unsafe_allow_html=True)
+    st.markdown("<h1>📝 Registro de Ocorrência <span style='font-size:1.2rem;color:#6366f1;'>(AA & CS)</span></h1>", unsafe_allow_html=True)
     st.write("Módulo para professores e monitores registrarem ocorrências de Atitude Frente à Aprendizagem (AA) e Comportamento Social (CS).")
     
     # Busca professores
@@ -507,8 +507,8 @@ if selection == '📝 Registrar Ocorrência':
                     
                 st.markdown(f"""
                 <div class="custom-card">
-                    <h4 style="margin: 0; color: #8257e5; font-size: 1.1rem;">🎓 {aluno_obj.nome}</h4>
-                    <p style="margin: 5px 0 0 0; color: #a8a8b3; font-size: 0.9rem;">
+                    <h4 style="margin: 0; color: #6366f1; font-size: 1.1rem;">🎓 {aluno_obj.nome}</h4>
+                    <p style="margin: 5px 0 0 0; color: #64748b; font-size: 0.9rem;">
                         <b>RA:</b> {aluno_obj.ra} &nbsp;|&nbsp; <b>Turma:</b> {aluno_obj.ano} &nbsp;|&nbsp; <b>Destino:</b> {aluno_obj.viagem_destino} &nbsp;|&nbsp; <b>Ônibus:</b> {aluno_obj.onibus or 'N/A'}
                     </p>
                 </div>
@@ -594,12 +594,12 @@ if selection == '📝 Registrar Ocorrência':
                             prof_nome = h.professor.nome if h.professor else "N/A"
                             st.markdown(f"""<div class="custom-card" style="margin-bottom: 12px; padding: 15px;">
 <div style="display: flex; justify-content: space-between; margin-bottom: 8px; font-size: 0.85rem;">
-<span style="font-weight: 600; color: #e2e8f0;">👤 Por: {prof_nome}</span>
-<span style="color: #a8a8b3;">📅 {data_str}</span>
+<span style="font-weight: 600; color: #334155;">👤 Por: {prof_nome}</span>
+<span style="color: #64748b;">📅 {data_str}</span>
 </div>
-{f'<p style="margin: 2px 0; color: #8257e5; font-size: 0.9rem;"><b>AA (-{getattr(h, "desconto_aa", 0.0) or 0.0:.1f} pts):</b> {h.atitude_aa}</p>' if h.atitude_aa else ''}
-{f'<p style="margin: 2px 0; color: #00e676; font-size: 0.9rem;"><b>CS (-{getattr(h, "desconto_cs", 0.0) or 0.0:.1f} pts):</b> {h.comportamento_cs}</p>' if h.comportamento_cs else ''}
-<p style="margin: 8px 0 0 0; font-size: 0.95rem; color: #ffffff; border-top: 1px dashed #292d36; padding-top: 8px;">
+{f'<p style="margin: 2px 0; color: #6366f1; font-size: 0.9rem;"><b>AA (-{getattr(h, "desconto_aa", 0.0) or 0.0:.1f} pts):</b> {h.atitude_aa}</p>' if h.atitude_aa else ''}
+{f'<p style="margin: 2px 0; color: #10b981; font-size: 0.9rem;"><b>CS (-{getattr(h, "desconto_cs", 0.0) or 0.0:.1f} pts):</b> {h.comportamento_cs}</p>' if h.comportamento_cs else ''}
+<p style="margin: 8px 0 0 0; font-size: 0.95rem; color: #0f172a; border-top: 1px dashed #e2e8f0; padding-top: 8px;">
 <i>"{h.observacoes}"</i>
 </p>
 </div>""", unsafe_allow_html=True)
@@ -657,17 +657,17 @@ elif selection == '📊 Dashboard da Coordenação':
             col_ex1, col_ex2 = st.columns(2)
             with col_ex1:
                 st.markdown(f'''
-                <div class="custom-card" style="border-left-color: #8257e5; text-align: center; padding: 20px;">
-                    <h4 style="margin: 0; color: #a8a8b3; font-weight: normal;">Nota Final AA</h4>
-                    <h1 style="margin: 5px 0 0 0; color: #8257e5; font-size: 3rem;">{nota_aa:.1f}</h1>
+                <div class="custom-card" style="border-left-color: #6366f1; text-align: center; padding: 20px;">
+                    <h4 style="margin: 0; color: #64748b; font-weight: normal;">Nota Final AA</h4>
+                    <h1 style="margin: 5px 0 0 0; color: #6366f1; font-size: 3rem;">{nota_aa:.1f}</h1>
                     <p style="margin: 5px 0 0 0; color: #ef4444; font-size: 0.9rem;">Pontos perdidos: -{total_desc_aa:.1f}</p>
                 </div>
                 ''', unsafe_allow_html=True)
             with col_ex2:
                 st.markdown(f'''
-                <div class="custom-card" style="border-left-color: #00e676; text-align: center; padding: 20px;">
-                    <h4 style="margin: 0; color: #a8a8b3; font-weight: normal;">Nota Final CS</h4>
-                    <h1 style="margin: 5px 0 0 0; color: #00e676; font-size: 3rem;">{nota_cs:.1f}</h1>
+                <div class="custom-card" style="border-left-color: #10b981; text-align: center; padding: 20px;">
+                    <h4 style="margin: 0; color: #64748b; font-weight: normal;">Nota Final CS</h4>
+                    <h1 style="margin: 5px 0 0 0; color: #10b981; font-size: 3rem;">{nota_cs:.1f}</h1>
                     <p style="margin: 5px 0 0 0; color: #ef4444; font-size: 0.9rem;">Pontos perdidos: -{total_desc_cs:.1f}</p>
                 </div>
                 ''', unsafe_allow_html=True)
@@ -872,22 +872,22 @@ elif selection == '📊 Dashboard da Coordenação':
                 cs_val = str(row.get("Comportamento (CS)", ""))
                 desc_aa = float(row.get("Desconto_AA", 0.0))
                 desc_cs = float(row.get("Desconto_CS", 0.0))
-                aa_html = f'<p style="margin: 2px 0; color: #8257e5; font-size: 0.9rem;"><b>AA (-{desc_aa:.1f} pts):</b> {aa_val}</p>' if aa_val and aa_val.lower() != 'nan' and aa_val.strip() else ''
-                cs_html = f'<p style="margin: 2px 0; color: #00e676; font-size: 0.9rem;"><b>CS (-{desc_cs:.1f} pts):</b> {cs_val}</p>' if cs_val and cs_val.lower() != 'nan' and cs_val.strip() else ''
+                aa_html = f'<p style="margin: 2px 0; color: #6366f1; font-size: 0.9rem;"><b>AA (-{desc_aa:.1f} pts):</b> {aa_val}</p>' if aa_val and aa_val.lower() != 'nan' and aa_val.strip() else ''
+                cs_html = f'<p style="margin: 2px 0; color: #10b981; font-size: 0.9rem;"><b>CS (-{desc_cs:.1f} pts):</b> {cs_val}</p>' if cs_val and cs_val.lower() != 'nan' and cs_val.strip() else ''
                 obs_val = str(row.get("Observações / Detalhamento", ""))
                 obs = obs_val if obs_val.lower() != 'nan' else ''
                 
                 card_html = f"""<div class="custom-card" style="margin-bottom: 15px; padding: 15px;">
 <div style="display: flex; justify-content: space-between; margin-bottom: 8px; font-size: 0.85rem;">
-<span style="font-weight: 600; color: #e2e8f0;">🎓 {row["Aluno"]} <span style="color:#64748b; font-weight:normal;">({row["Ano/Turma"]})</span></span>
-<span style="color: #a8a8b3;">📅 {row["Data/Hora"]}</span>
+<span style="font-weight: 600; color: #334155;">🎓 {row["Aluno"]} <span style="color:#94a3b8; font-weight:normal;">({row["Ano/Turma"]})</span></span>
+<span style="color: #64748b;">📅 {row["Data/Hora"]}</span>
 </div>
-<div style="font-size: 0.85rem; color: #a8a8b3; margin-bottom: 10px;">
+<div style="font-size: 0.85rem; color: #64748b; margin-bottom: 10px;">
 📍 {row["Destino"]} &nbsp;|&nbsp; 🚌 {row["Ônibus"]} &nbsp;|&nbsp; 👤 Prof: {row["Registrado por"]}
 </div>
 {aa_html}
 {cs_html}
-<p style="margin: 8px 0 0 0; font-size: 0.95rem; color: #ffffff; border-top: 1px dashed #292d36; padding-top: 8px;">
+<p style="margin: 8px 0 0 0; font-size: 0.95rem; color: #0f172a; border-top: 1px dashed #e2e8f0; padding-top: 8px;">
 <i>"{obs}"</i>
 </p>
 </div>"""
@@ -1358,13 +1358,13 @@ elif selection == '⚙️ Administração':
                     card_html = f"""
                     <div class="custom-card" style="margin-bottom: 15px; padding: 15px; border-left-color: {status_color};">
                         <div style="display: flex; justify-content: space-between; margin-bottom: 8px; font-size: 0.85rem;">
-                            <span style="font-weight: 600; color: #e2e8f0;">🆔 #{d["ID"]} &nbsp;|&nbsp; 👤 {d["Nome"]}</span>
-                            <span style="color: #a8a8b3;">📅 {d["Data/Hora"]}</span>
+                            <span style="font-weight: 600; color: #334155;">🆔 #{d["ID"]} &nbsp;|&nbsp; 👤 {d["Nome"]}</span>
+                            <span style="color: #64748b;">📅 {d["Data/Hora"]}</span>
                         </div>
-                        <div style="font-size: 0.85rem; color: #a8a8b3; margin-bottom: 10px;">
+                        <div style="font-size: 0.85rem; color: #64748b; margin-bottom: 10px;">
                             🏷️ Tipo: {d["Tipo"]} &nbsp;|&nbsp; 📍 Seção: {d["Seção"]} &nbsp;|&nbsp; <span style="color:{status_color};font-weight:bold;">{d["Status"]}</span>
                         </div>
-                        <p style="margin: 8px 0 0 0; font-size: 0.95rem; color: #ffffff; border-top: 1px dashed #292d36; padding-top: 8px;">
+                        <p style="margin: 8px 0 0 0; font-size: 0.95rem; color: #0f172a; border-top: 1px dashed #e2e8f0; padding-top: 8px;">
                             <i>"{d["Descrição"]}"</i>
                         </p>
                     </div>
@@ -1384,8 +1384,8 @@ elif selection == '⚙️ Administração':
                     if fb_obj:
                         st.markdown(f"""
                         <div class="custom-card" style="margin-bottom: 15px; padding: 15px;">
-                            <span style="color: #a8a8b3; font-size: 0.85rem;">Você está gerenciando o reporte:</span><br>
-                            <span style="color: #ffffff; font-weight: 600;">🆔 #{fb_obj.id} - Enviado por: {fb_obj.nome or 'Anônimo'}</span>
+                            <span style="color: #64748b; font-size: 0.85rem;">Você está gerenciando o reporte:</span><br>
+                            <span style="color: #0f172a; font-weight: 600;">🆔 #{fb_obj.id} - Enviado por: {fb_obj.nome or 'Anônimo'}</span>
                         </div>
                         """, unsafe_allow_html=True)
                         
