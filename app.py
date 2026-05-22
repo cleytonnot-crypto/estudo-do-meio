@@ -723,12 +723,13 @@ if selection == '📝 Registrar Ocorrência':
                 
                 with st.container(border=True):
                     st.markdown("### 3. Detalhes da Ocorrência")
+                    st.markdown("<p style='color:#dc2626; font-weight:bold; margin-bottom:15px;'>⚠️ ATENÇÃO: Marcar qualquer infração abaixo irá SUBTRAIR pontos da nota do aluno (todos os alunos começam com a nota máxima).</p>", unsafe_allow_html=True)
                     st.write("Assinale quais critérios do regulamento motivaram este registro:")
                     
                     tab_aa, tab_cs = st.tabs(["Atitude (AA)", "Comportamento (CS)"])
                     
                     with tab_aa:
-                        st.caption("Selecione as ocorrências e a gravidade para aplicar a dedução:")
+                        st.caption("Selecione as ocorrências e a gravidade para aplicar a dedução (os pontos serão subtraídos):")
                         aa_selecionados = []
                         total_desconto_aa = 0.0
                         for item in rubrica_aluno["AA"]:
@@ -745,9 +746,9 @@ if selection == '📝 Registrar Ocorrência':
                             with col_n:
                                 if marcado:
                                     options = [
-                                        f"Leve ({desc_leve} pts)",
-                                        f"Moderado ({desc_moderado} pts)",
-                                        f"Grave ({desc_grave} pts)"
+                                        f"Leve (-{desc_leve} pts)",
+                                        f"Moderado (-{desc_moderado} pts)",
+                                        f"Grave (-{desc_grave} pts)"
                                     ]
                                     differences = [abs(desc_leve - desc_padrao), abs(desc_moderado - desc_padrao), abs(desc_grave - desc_padrao)]
                                     default_idx = differences.index(min(differences))
@@ -775,7 +776,7 @@ if selection == '📝 Registrar Ocorrência':
                                     total_desconto_aa += desc
                                     
                     with tab_cs:
-                        st.caption("Selecione as ocorrências e a gravidade para aplicar a dedução:")
+                        st.caption("Selecione as ocorrências e a gravidade para aplicar a dedução (os pontos serão subtraídos):")
                         cs_selecionados = []
                         total_desconto_cs = 0.0
                         for item in rubrica_aluno["CS"]:
@@ -792,9 +793,9 @@ if selection == '📝 Registrar Ocorrência':
                             with col_n:
                                 if marcado:
                                     options = [
-                                        f"Leve ({desc_leve} pts)",
-                                        f"Moderado ({desc_moderado} pts)",
-                                        f"Grave ({desc_grave} pts)"
+                                        f"Leve (-{desc_leve} pts)",
+                                        f"Moderado (-{desc_moderado} pts)",
+                                        f"Grave (-{desc_grave} pts)"
                                     ]
                                     differences = [abs(desc_leve - desc_padrao), abs(desc_moderado - desc_padrao), abs(desc_grave - desc_padrao)]
                                     default_idx = differences.index(min(differences))
@@ -826,6 +827,9 @@ if selection == '📝 Registrar Ocorrência':
                         "📝 Detalhamento e Contextualização do Ocorrido (Obrigatório):", 
                         placeholder="Descreva as ações, horários e contexto para justificar os critérios assinalados."
                     )
+                    
+                    if total_desconto_aa > 0 or total_desconto_cs > 0:
+                        st.warning(f"⚠️ **Resumo da Ocorrência:** Marcar as infrações selecionadas irá subtrair **-{total_desconto_aa:.2f} pts** em Atitude (AA) e **-{total_desconto_cs:.2f} pts** em Comportamento (CS) da nota do aluno.")
                     
                     if st.button("💾 Registrar Ocorrência", type="primary", use_container_width=True):
                         if not aa_selecionados and not cs_selecionados:
