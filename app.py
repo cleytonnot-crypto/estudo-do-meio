@@ -737,101 +737,97 @@ if selection == '📝 Registrar Ocorrência':
                     st.markdown("<p style='color:#dc2626; font-weight:bold; margin-bottom:15px;'>⚠️ ATENÇÃO: Marcar qualquer infração abaixo irá SUBTRAIR pontos da nota do aluno (todos os alunos começam com a nota máxima).</p>", unsafe_allow_html=True)
                     st.write("Assinale quais critérios do regulamento motivaram este registro:")
                     
-                    tab_aa, tab_cs = st.tabs(["Atitude (AA)", "Comportamento (CS)"])
+                    def sync_state(source, target):
+                        if source in st.session_state:
+                            st.session_state[target] = st.session_state[source]
+
+                    tab_todos, tab_aa, tab_cs = st.tabs(["Todos (AA e CS)", "Atitude (AA)", "Comportamento (CS)"])
                     
+                    def render_crit(tipo, item, tab_prefix):
+                        if len(item) == 2:
+                            crit, desc_padrao = item
+                            desc_leve, desc_moderado, desc_grave = 0.1, 0.3, 0.5
+                        else:
+                            crit, desc_padrao, desc_leve, desc_moderado, desc_grave = item
+                            
+                        cb_key = f"cb_{tab_prefix}_{tipo}_{crit}"
+                        other_cb_key = f"cb_{'solo' if tab_prefix == 'todos' else 'todos'}_{tipo}_{crit}"
+                        grav_key = f"grav_{tab_prefix}_{tipo}_{crit}"
+                        other_grav_key = f"grav_{'solo' if tab_prefix == 'todos' else 'todos'}_{tipo}_{crit}"
+                        
+                        if other_cb_key not in st.session_state:
+                            st.session_state[other_cb_key] = False
+                            
+                        col_c, col_n = st.columns([4, 3])
+                        with col_c:
+                            if tab_prefix == "todos":
+                                color = "blue" if tipo == "AA" else "orange"
+                                label = f":{color}[**[{tipo}]**] {crit}"
+                            else:
+                                label = crit
+                            marcado = st.checkbox(label, key=cb_key, on_change=sync_state, args=(cb_key, other_cb_key))
+                            
+                        desc = 0.0
+                        grav_label = ""
+                        if marcado:
+                            with col_n:
+                                options = [
+                                    f"Leve (-{desc_leve} pts)",
+                                    f"Moderado (-{desc_moderado} pts)",
+                                    f"Grave (-{desc_grave} pts)"
+                                ]
+                                differences = [abs(desc_leve - desc_padrao), abs(desc_moderado - desc_padrao), abs(desc_grave - desc_padrao)]
+                                default_idx = differences.index(min(differences))
+                                
+                                selected_gravity = st.radio(
+                                    "Gravidade",
+                                    options=options,
+                                    index=default_idx,
+                                    horizontal=True,
+                                    key=grav_key,
+                                    on_change=sync_state,
+                                    args=(grav_key, other_grav_key),
+                                    label_visibility="collapsed"
+                                )
+                                
+                                if "Leve" in selected_gravity:
+                                    desc = desc_leve
+                                    grav_label = "Leve"
+                                elif "Moderado" in selected_gravity:
+                                    desc = desc_moderado
+                                    grav_label = "Moderado"
+                                else:
+                                    desc = desc_grave
+                                    grav_label = "Grave"
+                                    
+                        return marcado, desc, grav_label, crit
+
+                    with tab_todos:
+                        st.caption("Lista unificada com todas as ocorrências de Atitude e Comportamento:")
+                        for item in rubrica_aluno["AA"]:
+                            render_crit("AA", item, "todos")
+                        for item in rubrica_aluno["CS"]:
+                            render_crit("CS", item, "todos")
+                            
+                    aa_selecionados = []
+                    total_desconto_aa = 0.0
                     with tab_aa:
                         st.caption("Selecione as ocorrências e a gravidade para aplicar a dedução (os pontos serão subtraídos):")
-                        aa_selecionados = []
-                        total_desconto_aa = 0.0
                         for item in rubrica_aluno["AA"]:
-                            # Garante compatibilidade se o item for apenas (descricao, desconto_padrao)
-                            if len(item) == 2:
-                                crit, desc_padrao = item
-                                desc_leve, desc_moderado, desc_grave = 0.1, 0.3, 0.5
-                            else:
-                                crit, desc_padrao, desc_leve, desc_moderado, desc_grave = item
-                            
-                            col_c, col_n = st.columns([4, 3])
-                            with col_c:
-                                marcado = st.checkbox(crit, key=f"aa_{crit}")
-                            with col_n:
-                                if marcado:
-                                    options = [
-                                        f"Leve (-{desc_leve} pts)",
-                                        f"Moderado (-{desc_moderado} pts)",
-                                        f"Grave (-{desc_grave} pts)"
-                                    ]
-                                    differences = [abs(desc_leve - desc_padrao), abs(desc_moderado - desc_padrao), abs(desc_grave - desc_padrao)]
-                                    default_idx = differences.index(min(differences))
-                                    
-                                    selected_gravity = st.radio(
-                                        "Gravidade",
-                                        options=options,
-                                        index=default_idx,
-                                        horizontal=True,
-                                        key=f"grav_aa_{crit}",
-                                        label_visibility="collapsed"
-                                    )
-                                    
-                                    if "Leve" in selected_gravity:
-                                        desc = desc_leve
-                                        grav_label = "Leve"
-                                    elif "Moderado" in selected_gravity:
-                                        desc = desc_moderado
-                                        grav_label = "Moderado"
-                                    else:
-                                        desc = desc_grave
-                                        grav_label = "Grave"
-                                        
-                                    aa_selecionados.append(f"{crit} ({grav_label})")
-                                    total_desconto_aa += desc
-                                    
+                            marcado, desc, grav_label, crit = render_crit("AA", item, "solo")
+                            if marcado:
+                                aa_selecionados.append(f"{crit} ({grav_label})")
+                                total_desconto_aa += desc
+                                
+                    cs_selecionados = []
+                    total_desconto_cs = 0.0
                     with tab_cs:
                         st.caption("Selecione as ocorrências e a gravidade para aplicar a dedução (os pontos serão subtraídos):")
-                        cs_selecionados = []
-                        total_desconto_cs = 0.0
                         for item in rubrica_aluno["CS"]:
-                            # Garante compatibilidade se o item for apenas (descricao, desconto_padrao)
-                            if len(item) == 2:
-                                crit, desc_padrao = item
-                                desc_leve, desc_moderado, desc_grave = 0.1, 0.3, 0.5
-                            else:
-                                crit, desc_padrao, desc_leve, desc_moderado, desc_grave = item
-                                
-                            col_c, col_n = st.columns([4, 3])
-                            with col_c:
-                                marcado = st.checkbox(crit, key=f"cs_{crit}")
-                            with col_n:
-                                if marcado:
-                                    options = [
-                                        f"Leve (-{desc_leve} pts)",
-                                        f"Moderado (-{desc_moderado} pts)",
-                                        f"Grave (-{desc_grave} pts)"
-                                    ]
-                                    differences = [abs(desc_leve - desc_padrao), abs(desc_moderado - desc_padrao), abs(desc_grave - desc_padrao)]
-                                    default_idx = differences.index(min(differences))
-                                    
-                                    selected_gravity = st.radio(
-                                        "Gravidade",
-                                        options=options,
-                                        index=default_idx,
-                                        horizontal=True,
-                                        key=f"grav_cs_{crit}",
-                                        label_visibility="collapsed"
-                                    )
-                                    
-                                    if "Leve" in selected_gravity:
-                                        desc = desc_leve
-                                        grav_label = "Leve"
-                                    elif "Moderado" in selected_gravity:
-                                        desc = desc_moderado
-                                        grav_label = "Moderado"
-                                    else:
-                                        desc = desc_grave
-                                        grav_label = "Grave"
-                                        
-                                    cs_selecionados.append(f"{crit} ({grav_label})")
-                                    total_desconto_cs += desc
+                            marcado, desc, grav_label, crit = render_crit("CS", item, "solo")
+                            if marcado:
+                                cs_selecionados.append(f"{crit} ({grav_label})")
+                                total_desconto_cs += desc
                                 
                     st.markdown("<br>", unsafe_allow_html=True)
                     observacoes = st.text_area(
