@@ -591,19 +591,17 @@ if selection == '📝 Registrar Ocorrência':
                         for h in historico:
                             data_str = h.data_hora.strftime("%d/%m/%Y %H:%M")
                             prof_nome = h.professor.nome if h.professor else "N/A"
-                            st.markdown(f"""
-                            <div class="custom-card" style="margin-bottom: 12px; padding: 15px;">
-                                <div style="display: flex; justify-content: space-between; margin-bottom: 8px; font-size: 0.85rem;">
-                                    <span style="font-weight: 600; color: #e2e8f0;">👤 Por: {prof_nome}</span>
-                                    <span style="color: #a8a8b3;">📅 {data_str}</span>
-                                </div>
-                                {f'<p style="margin: 2px 0; color: #8257e5; font-size: 0.9rem;"><b>AA (-{getattr(h, "desconto_aa", 0.0) or 0.0:.1f} pts):</b> {h.atitude_aa}</p>' if h.atitude_aa else ''}
-                                {f'<p style="margin: 2px 0; color: #00e676; font-size: 0.9rem;"><b>CS (-{getattr(h, "desconto_cs", 0.0) or 0.0:.1f} pts):</b> {h.comportamento_cs}</p>' if h.comportamento_cs else ''}
-                                <p style="margin: 8px 0 0 0; font-size: 0.95rem; color: #ffffff; border-top: 1px dashed #292d36; padding-top: 8px;">
-                                    <i>"{h.observacoes}"</i>
-                                </p>
-                            </div>
-                            """, unsafe_allow_html=True)
+                            st.markdown(f"""<div class="custom-card" style="margin-bottom: 12px; padding: 15px;">
+<div style="display: flex; justify-content: space-between; margin-bottom: 8px; font-size: 0.85rem;">
+<span style="font-weight: 600; color: #e2e8f0;">👤 Por: {prof_nome}</span>
+<span style="color: #a8a8b3;">📅 {data_str}</span>
+</div>
+{f'<p style="margin: 2px 0; color: #8257e5; font-size: 0.9rem;"><b>AA (-{getattr(h, "desconto_aa", 0.0) or 0.0:.1f} pts):</b> {h.atitude_aa}</p>' if h.atitude_aa else ''}
+{f'<p style="margin: 2px 0; color: #00e676; font-size: 0.9rem;"><b>CS (-{getattr(h, "desconto_cs", 0.0) or 0.0:.1f} pts):</b> {h.comportamento_cs}</p>' if h.comportamento_cs else ''}
+<p style="margin: 8px 0 0 0; font-size: 0.95rem; color: #ffffff; border-top: 1px dashed #292d36; padding-top: 8px;">
+<i>"{h.observacoes}"</i>
+</p>
+</div>""", unsafe_allow_html=True)
 
 elif selection == '📊 Dashboard da Coordenação':
     st.title("📊 Dashboard de Monitoramento Pedagógico")
@@ -852,27 +850,27 @@ elif selection == '📊 Dashboard da Coordenação':
             for idx, row in df_exibicao.iterrows():
                 aa_val = str(row.get("Atitudes (AA)", ""))
                 cs_val = str(row.get("Comportamento (CS)", ""))
-                aa_html = f'<p style="margin: 2px 0; color: #8257e5; font-size: 0.9rem;"><b>AA:</b> {aa_val}</p>' if aa_val and aa_val.lower() != 'nan' and aa_val.strip() else ''
-                cs_html = f'<p style="margin: 2px 0; color: #00e676; font-size: 0.9rem;"><b>CS:</b> {cs_val}</p>' if cs_val and cs_val.lower() != 'nan' and cs_val.strip() else ''
+                desc_aa = float(row.get("Desconto_AA", 0.0))
+                desc_cs = float(row.get("Desconto_CS", 0.0))
+                aa_html = f'<p style="margin: 2px 0; color: #8257e5; font-size: 0.9rem;"><b>AA (-{desc_aa:.1f} pts):</b> {aa_val}</p>' if aa_val and aa_val.lower() != 'nan' and aa_val.strip() else ''
+                cs_html = f'<p style="margin: 2px 0; color: #00e676; font-size: 0.9rem;"><b>CS (-{desc_cs:.1f} pts):</b> {cs_val}</p>' if cs_val and cs_val.lower() != 'nan' and cs_val.strip() else ''
                 obs_val = str(row.get("Observações / Detalhamento", ""))
                 obs = obs_val if obs_val.lower() != 'nan' else ''
                 
-                card_html = f"""
-                <div class="custom-card" style="margin-bottom: 15px; padding: 15px;">
-                    <div style="display: flex; justify-content: space-between; margin-bottom: 8px; font-size: 0.85rem;">
-                        <span style="font-weight: 600; color: #e2e8f0;">🎓 {row["Aluno"]} <span style="color:#64748b; font-weight:normal;">({row["Ano/Turma"]})</span></span>
-                        <span style="color: #a8a8b3;">📅 {row["Data/Hora"]}</span>
-                    </div>
-                    <div style="font-size: 0.85rem; color: #a8a8b3; margin-bottom: 10px;">
-                        📍 {row["Destino"]} &nbsp;|&nbsp; 🚌 {row["Ônibus"]} &nbsp;|&nbsp; 👤 Prof: {row["Registrado por"]}
-                    </div>
-                    {aa_html}
-                    {cs_html}
-                    <p style="margin: 8px 0 0 0; font-size: 0.95rem; color: #ffffff; border-top: 1px dashed #292d36; padding-top: 8px;">
-                        <i>"{obs}"</i>
-                    </p>
-                </div>
-                """
+                card_html = f"""<div class="custom-card" style="margin-bottom: 15px; padding: 15px;">
+<div style="display: flex; justify-content: space-between; margin-bottom: 8px; font-size: 0.85rem;">
+<span style="font-weight: 600; color: #e2e8f0;">🎓 {row["Aluno"]} <span style="color:#64748b; font-weight:normal;">({row["Ano/Turma"]})</span></span>
+<span style="color: #a8a8b3;">📅 {row["Data/Hora"]}</span>
+</div>
+<div style="font-size: 0.85rem; color: #a8a8b3; margin-bottom: 10px;">
+📍 {row["Destino"]} &nbsp;|&nbsp; 🚌 {row["Ônibus"]} &nbsp;|&nbsp; 👤 Prof: {row["Registrado por"]}
+</div>
+{aa_html}
+{cs_html}
+<p style="margin: 8px 0 0 0; font-size: 0.95rem; color: #ffffff; border-top: 1px dashed #292d36; padding-top: 8px;">
+<i>"{obs}"</i>
+</p>
+</div>"""
                 st.markdown(card_html, unsafe_allow_html=True)
 
         # Exportação para Excel (sem coluna auxiliar)
