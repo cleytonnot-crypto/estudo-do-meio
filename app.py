@@ -983,7 +983,7 @@ elif selection == '📊 Análise de Ocorrências':
         with col3:
             st.markdown(f'<div class="metric-card" style="border-left-color: #f59e0b;"><div class="metric-title">Total Ocorrências</div><div class="metric-value">{total_ocorrencias}</div></div>', unsafe_allow_html=True)
         with col4:
-            st.markdown(f'<div class="metric-card" style="border-left-color: #ec4899;"><div class="metric-title">Alunos Avaliados (%)</div><div class="metric-value">{perc_alunos:.1f}%</div></div>', unsafe_allow_html=True)
+            st.markdown(f'<div class="metric-card" style="border-left-color: #ec4899;"><div class="metric-title">Alunos com Ocorrências (%)</div><div class="metric-value">{perc_alunos:.1f}%</div></div>', unsafe_allow_html=True)
             
     df_oco = carregar_dados_coordenacao()
     
