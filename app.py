@@ -2131,6 +2131,39 @@ elif selection == '⚙️ Administração':
                     time.sleep(1)
                     st.rerun()
 
+            with st.container(border=True):
+                st.markdown("#### ☁️ Sincronização com Google Sheets")
+                st.write("Força o envio de dados locais ou a leitura da planilha online.")
+                
+                col_sync_pull, col_sync_push = st.columns(2)
+                with col_sync_pull:
+                    if st.button("📥 Baixar dados do Google Sheets", use_container_width=True, help="Sobrescreve a base local com os dados atuais da planilha."):
+                        with st.spinner("Baixando dados..."):
+                            from database import pull_all_from_sheets
+                            try:
+                                pull_all_from_sheets()
+                                st.success("Dados baixados do Google Sheets com sucesso!")
+                                st.session_state.banco_sincronizado = True
+                                import time
+                                time.sleep(1)
+                                st.rerun()
+                            except Exception as sync_err:
+                                st.error(f"Erro ao baixar dados: {sync_err}")
+                                
+                with col_sync_push:
+                    if st.button("📤 Enviar dados locais para o Google Sheets", use_container_width=True, help="Envia todos os dados locais atuais do banco para a planilha."):
+                        with st.spinner("Enviando dados..."):
+                            from database import push_table_to_sheets
+                            try:
+                                for table in ["professores", "alunos", "criterios_rubrica", "avaliacoes", "feedbacks", "configuracoes"]:
+                                    push_table_to_sheets(table)
+                                st.success("Dados locais enviados para o Google Sheets com sucesso!")
+                                import time
+                                time.sleep(1)
+                                st.rerun()
+                            except Exception as sync_err:
+                                st.error(f"Erro ao enviar dados: {sync_err}")
+
     with admin_tab7:
         st.subheader("🚨 Perigo: Limpeza do Banco de Dados")
         st.warning("Essas ações são permanentes e não podem ser desfeitas. Use com cautela durante testes.")

@@ -141,11 +141,20 @@ def pull_all_from_sheets():
         # Puxa na ordem correta de chaves estrangeiras (professores e alunos primeiro)
         for table_name in ["professores", "alunos", "criterios_rubrica", "avaliacoes", "feedbacks", "configuracoes"]:
             sheet_name = SHEET_MAP[table_name]
+            
+            # Conta registros locais atuais
             try:
+                local_count = db.execute(text(f"SELECT COUNT(*) FROM {table_name}")).scalar() or 0
+            except Exception:
+                local_count = 0
+                
+            try:
+                # Tenta ler do Google Sheets
                 df = conn.read(worksheet=sheet_name, ttl=0)
                 df = df.dropna(how="all").reset_index(drop=True)
                 df.columns = [str(col).strip().lower() for col in df.columns]
                 
+                # Se a planilha tem dados reais, atualiza o banco local
                 if not df.empty:
                     db.execute(text(f"DELETE FROM {table_name}"))
                     
@@ -275,13 +284,22 @@ def pull_all_from_sheets():
                         df[["id", "chave", "valor"]].to_sql(name="configuracoes", con=engine, if_exists="append", index=False)
                         
                 else:
-                    # Planilha vazia, envia dados locais semeados
-                    push_table_to_sheets(table_name)
+                    # Planilha existe no Sheets mas está vazia.
+                    # Se o banco de dados local SQLite já possui registros, fazemos o PUSH deles para o Sheets.
+                    if local_count > 0:
+                        print(f"Planilha {sheet_name} vazia no Sheets, mas SQLite tem {local_count} registros. Gravando dados locais nela...")
+                        push_table_to_sheets(table_name)
+                    else:
+                        print(f"Aba {sheet_name} vazia e SQLite sem dados. Mantendo vazia.")
                     
             except Exception as e:
-                # Planilha não existe, envia e cria a aba
-                print(f"Erro ao ler/aba inexistente {sheet_name}: {e}. Criando aba...")
-                push_table_to_sheets(table_name)
+                # Planilha não existe ou falhou a leitura.
+                # Se o banco SQLite tem dados, envia os dados locais e cria a aba no Sheets.
+                if local_count > 0:
+                    print(f"Aba {sheet_name} indisponível ({e}). Criando e enviando dados locais...")
+                    push_table_to_sheets(table_name)
+                else:
+                    print(f"Aba {sheet_name} indisponível e SQLite sem registros. Ignorando pull.")
                 
         db.commit()
         print("=== PULL CONCLUÍDO COM SUCESSO ===")
@@ -374,25 +392,24 @@ def push_table_to_sheets(table_name):
         print(f"Erro ao empurrar {table_name} para GSheets: {e}")
 
 # SQLAlchemy Listeners para empurrar alterações de forma transparente
-@event.listens_for(Session, 'before_commit')
-def receive_before_commit(session):
-    modified_tables = set()
+@event.listens_for(Session, 'before_flush')
+def receive_before_flush(session, flush_context, instances):
+    if 'modified_tables' not in session.info:
+        session.info['modified_tables'] = set()
     for obj in session.new.union(session.dirty).union(session.deleted):
         if hasattr(obj, "__tablename__"):
-            t_name = obj.__tablename__
-            # Mapeamento do tablename do SQLAlchemy para a sincronização
-            modified_tables.add(t_name)
-    session.info['modified_tables'] = modified_tables
+            session.info['modified_tables'].add(obj.__tablename__)
 
 @event.listens_for(Session, 'after_commit')
 def receive_after_commit(session):
     modified_tables = session.info.get('modified_tables', set())
     for t_name in modified_tables:
-        # Se for rubrica ou criterio, atualiza a aba Criterios
         if t_name in ["rubricas", "criterios_rubrica"]:
             push_table_to_sheets("criterios_rubrica")
         else:
             push_table_to_sheets(t_name)
+    # Limpa para a próxima transação
+    session.info['modified_tables'] = set()
 
 
 def inicializar_banco():
