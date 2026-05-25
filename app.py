@@ -86,30 +86,31 @@ def processar_excel_professores(df, db):
         ).first()
         
         if prof_existente:
-            try:
-                prof_existente.nome = nome_val
-                prof_existente.viagem = limpar_valor_excel(r['viagem'])
-                if 'onibus' in df.columns:
-                    prof_existente.onibus = on_val
-                db.commit()
-                count += 1
-            except Exception:
-                db.rollback()
-                duplicates_skipped += 1
+            prof_existente.nome = nome_val
+            prof_existente.viagem = limpar_valor_excel(r['viagem'])
+            if 'onibus' in df.columns:
+                prof_existente.onibus = on_val
+            count += 1
         else:
-            try:
-                novo_prof = Professor(
-                    nome=nome_val,
-                    email=email_val,
-                    viagem=limpar_valor_excel(r['viagem']),
-                    onibus=on_val
-                )
-                db.add(novo_prof)
-                db.commit()
-                count += 1
-            except Exception:
-                db.rollback()
-                duplicates_skipped += 1
+            novo_prof = Professor(
+                nome=nome_val,
+                email=email_val,
+                viagem=limpar_valor_excel(r['viagem']),
+                onibus=on_val
+            )
+            db.add(novo_prof)
+            count += 1
+            
+        # Flush to local transaction so subsequent loop iterations see this change
+        db.flush()
+            
+    try:
+        db.commit()
+    except Exception as e:
+        db.rollback()
+        duplicates_skipped = count
+        count = 0
+        raise e
             
     return count, duplicates_skipped
 
@@ -144,33 +145,34 @@ def processar_excel_alunos(df, db):
         ).first()
         
         if aluno_existente:
-            try:
-                aluno_existente.nome = nome_val
-                aluno_existente.ano = limpar_valor_excel(r['ano'])
-                aluno_existente.viagem_destino = limpar_valor_excel(r['viagem_destino'])
-                if 'onibus' in df.columns:
-                    aluno_existente.onibus = on_val
-                db.commit()
-                count += 1
-            except Exception:
-                db.rollback()
-                duplicates_skipped += 1
+            aluno_existente.nome = nome_val
+            aluno_existente.ano = limpar_valor_excel(r['ano'])
+            aluno_existente.viagem_destino = limpar_valor_excel(r['viagem_destino'])
+            if 'onibus' in df.columns:
+                aluno_existente.onibus = on_val
+            count += 1
         else:
-            try:
-                novo_aluno = Aluno(
-                    nome=nome_val,
-                    ra=ra_val,
-                    email=email_val,
-                    ano=limpar_valor_excel(r['ano']),
-                    viagem_destino=limpar_valor_excel(r['viagem_destino']),
-                    onibus=on_val
-                )
-                db.add(novo_aluno)
-                db.commit()
-                count += 1
-            except Exception:
-                db.rollback()
-                duplicates_skipped += 1
+            novo_aluno = Aluno(
+                nome=nome_val,
+                ra=ra_val,
+                email=email_val,
+                ano=limpar_valor_excel(r['ano']),
+                viagem_destino=limpar_valor_excel(r['viagem_destino']),
+                onibus=on_val
+            )
+            db.add(novo_aluno)
+            count += 1
+            
+        # Flush to local transaction so subsequent loop iterations see this change
+        db.flush()
+            
+    try:
+        db.commit()
+    except Exception as e:
+        db.rollback()
+        duplicates_skipped = count
+        count = 0
+        raise e
             
     return count, duplicates_skipped
 
