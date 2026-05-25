@@ -12,6 +12,7 @@ __pycache__/
 
 # Configurações do Streamlit local
 .streamlit/
+.streamlit/secrets.toml
 
 # Testes e relatórios
 .pytest_cache/
