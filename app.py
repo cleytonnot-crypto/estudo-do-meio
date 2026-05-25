@@ -177,6 +177,15 @@ def processar_excel_alunos(df, db):
 # Inicializa o banco de dados
 inicializar_banco()
 
+# Sincroniza dados com o Google Sheets no início da sessão do usuário
+if "banco_sincronizado" not in st.session_state:
+    from database import pull_all_from_sheets
+    try:
+        pull_all_from_sheets()
+        st.session_state.banco_sincronizado = True
+    except Exception as sync_err:
+        st.warning(f"Não foi possível baixar os dados do Google Sheets. Usando dados locais. Erro: {sync_err}")
+
 # Configuração inicial da página
 st.set_page_config(
     page_title="Avaliação de Estudo do Meio",
