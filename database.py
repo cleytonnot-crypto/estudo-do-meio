@@ -179,7 +179,10 @@ def pull_all_from_sheets():
                     
                     # Deleta e insere
                     db.execute(text("DELETE FROM professores"))
-                    df[["id", "nome", "email", "viagem", "onibus"]].to_sql(name="professores", con=engine, if_exists="append", index=False)
+                    db.execute(
+                        text("INSERT INTO professores (id, nome, email, viagem, onibus) VALUES (:id, :nome, :email, :viagem, :onibus)"),
+                        df[["id", "nome", "email", "viagem", "onibus"]].to_dict(orient="records")
+                    )
                     
                 elif table_name == "alunos":
                     for col in ["ra", "nome", "ano", "viagem_destino", "onibus"]:
@@ -192,7 +195,10 @@ def pull_all_from_sheets():
                         df["email"] = df["email"].fillna(df["ra"].astype(str) + "@aluno.cmc.com.br")
                         
                     db.execute(text("DELETE FROM alunos"))
-                    df[["id", "nome", "ra", "email", "ano", "viagem_destino", "onibus"]].to_sql(name="alunos", con=engine, if_exists="append", index=False)
+                    db.execute(
+                        text("INSERT INTO alunos (id, nome, ra, email, ano, viagem_destino, onibus) VALUES (:id, :nome, :ra, :email, :ano, :viagem_destino, :onibus)"),
+                        df[["id", "nome", "ra", "email", "ano", "viagem_destino", "onibus"]].to_dict(orient="records")
+                    )
                     
                 elif table_name == "criterios_rubrica":
                     unique_rubricas = df["rubrica"].unique()
@@ -243,7 +249,10 @@ def pull_all_from_sheets():
                             "desconto_grave": float(row.get("desconto_grave", 0.5) if pd.notna(row.get("desconto_grave")) else 0.5)
                         })
                     if criteria_data:
-                        pd.DataFrame(criteria_data).to_sql(name="criterios_rubrica", con=engine, if_exists="append", index=False)
+                        db.execute(
+                            text("INSERT INTO criterios_rubrica (id, rubrica_id, tipo, descricao, desconto_padrao, desconto_leve, desconto_moderado, desconto_grave) VALUES (:id, :rubrica_id, :tipo, :descricao, :desconto_padrao, :desconto_leve, :desconto_moderado, :desconto_grave)"),
+                            criteria_data
+                        )
                         
                 elif table_name == "avaliacoes":
                     records = []
@@ -281,7 +290,10 @@ def pull_all_from_sheets():
                     
                     db.execute(text("DELETE FROM avaliacoes"))
                     if records:
-                        pd.DataFrame(records).to_sql(name="avaliacoes", con=engine, if_exists="append", index=False)
+                        db.execute(
+                            text("INSERT INTO avaliacoes (id, professor_id, aluno_id, data_hora, atitude_aa, comportamento_cs, desconto_aa, desconto_cs, observacoes) VALUES (:id, :professor_id, :aluno_id, :data_hora, :atitude_aa, :comportamento_cs, :desconto_aa, :desconto_cs, :observacoes)"),
+                            records
+                        )
                         
                 elif table_name == "feedbacks":
                     records = []
@@ -306,11 +318,17 @@ def pull_all_from_sheets():
                     
                     db.execute(text("DELETE FROM feedbacks"))
                     if records:
-                        pd.DataFrame(records).to_sql(name="feedbacks", con=engine, if_exists="append", index=False)
+                        db.execute(
+                            text("INSERT INTO feedbacks (id, data_hora, nome, tipo, secao, descricao, resolvido) VALUES (:id, :data_hora, :nome, :tipo, :secao, :descricao, :resolvido)"),
+                            records
+                        )
                         
                 elif table_name == "configuracoes":
                     db.execute(text("DELETE FROM configuracoes"))
-                    df[["id", "chave", "valor"]].to_sql(name="configuracoes", con=engine, if_exists="append", index=False)
+                    db.execute(
+                        text("INSERT INTO configuracoes (id, chave, valor) VALUES (:id, :chave, :valor)"),
+                        df[["id", "chave", "valor"]].to_dict(orient="records")
+                    )
                     
             except Exception as insert_err:
                 print(f"Erro ao inserir dados da tabela {table_name} no SQLite: {insert_err}")
