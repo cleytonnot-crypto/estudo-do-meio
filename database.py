@@ -148,164 +148,180 @@ def pull_all_from_sheets():
             except Exception:
                 local_count = 0
                 
+            # Tenta ler do Google Sheets
+            df = None
             try:
-                # Tenta ler do Google Sheets
                 df = conn.read(worksheet=sheet_name, ttl=0)
-                df = df.dropna(how="all").reset_index(drop=True)
-                df.columns = [str(col).strip().lower() for col in df.columns]
+                if df is not None:
+                    df = df.dropna(how="all").reset_index(drop=True)
+                    df.columns = [str(col).strip().lower() for col in df.columns]
+            except Exception as read_err:
+                print(f"Não foi possível ler a aba {sheet_name} do Google Sheets: {read_err}")
+                df = None
                 
-                # Se a planilha tem dados reais, atualiza o banco local
-                if not df.empty:
-                    db.execute(text(f"DELETE FROM {table_name}"))
-                    
-                    if table_name == "professores":
-                        for col in ["nome", "email", "viagem", "onibus"]:
-                            if col not in df.columns:
-                                df[col] = None
-                        df["id"] = range(1, len(df) + 1)
-                        df[["id", "nome", "email", "viagem", "onibus"]].to_sql(name="professores", con=engine, if_exists="append", index=False)
-                        
-                    elif table_name == "alunos":
-                        for col in ["ra", "nome", "ano", "viagem_destino", "onibus"]:
-                            if col not in df.columns:
-                                df[col] = None
-                        df["id"] = range(1, len(df) + 1)
-                        if "email" not in df.columns:
-                            df["email"] = df["ra"].astype(str) + "@aluno.cmc.com.br"
-                        else:
-                            df["email"] = df["email"].fillna(df["ra"].astype(str) + "@aluno.cmc.com.br")
-                        df[["id", "nome", "ra", "email", "ano", "viagem_destino", "onibus"]].to_sql(name="alunos", con=engine, if_exists="append", index=False)
-                        
-                    elif table_name == "criterios_rubrica":
-                        db.execute(text("DELETE FROM criterios_rubrica"))
-                        db.execute(text("DELETE FROM rubricas"))
-                        
-                        unique_rubricas = df["rubrica"].unique()
-                        rubrica_ids = {}
-                        for name in unique_rubricas:
-                            if not name or pd.isna(name):
-                                continue
-                            max_aa, max_cs = 1.0, 1.0
-                            termos = ""
-                            name_clean = str(name).strip().lower()
-                            if "3" in name_clean:
-                                max_aa, max_cs = 0.4, 1.6
-                                termos = "3ª SÉRIE; 3ª SERIE; 3 SÉRIE; 3 SERIE; 3EM; 3º EM; 3ºEM; 3 ANO; 3º ANO"
-                            elif "2" in name_clean:
-                                max_aa, max_cs = 1.0, 1.0
-                                termos = "2ª SÉRIE; 2ª SERIE; 2 SÉRIE; 2 SERIE; 2EM; 2º EM; 2ºEM"
-                            
-                            db.execute(text("INSERT INTO rubricas (nome, max_aa, max_cs, termos_mapeamento) VALUES (:nome, :max_aa, :max_cs, :termos)"),
-                                       {"nome": str(name).strip(), "max_aa": max_aa, "max_cs": max_cs, "termos": termos})
-                            r_id = db.execute(text("SELECT last_insert_rowid()")).scalar()
-                            rubrica_ids[str(name).strip().lower()] = r_id
-                            
-                        criteria_data = []
-                        for idx, row in df.iterrows():
-                            rub_name = row["rubrica"]
-                            if not rub_name or pd.isna(rub_name):
-                                continue
-                            rid = rubrica_ids.get(str(rub_name).strip().lower())
-                            if not rid:
-                                continue
-                            criteria_data.append({
-                                "id": idx + 1,
-                                "rubrica_id": rid,
-                                "tipo": str(row["tipo"]).strip().upper(),
-                                "descricao": str(row["descricao"]).strip(),
-                                "desconto_padrao": float(row.get("desconto_moderado", 0.3) if pd.notna(row.get("desconto_moderado")) else 0.3),
-                                "desconto_leve": float(row.get("desconto_leve", 0.1) if pd.notna(row.get("desconto_leve")) else 0.1),
-                                "desconto_moderado": float(row.get("desconto_moderado", 0.3) if pd.notna(row.get("desconto_moderado")) else 0.3),
-                                "desconto_grave": float(row.get("desconto_grave", 0.5) if pd.notna(row.get("desconto_grave")) else 0.5)
-                            })
-                        if criteria_data:
-                            pd.DataFrame(criteria_data).to_sql(name="criterios_rubrica", con=engine, if_exists="append", index=False)
-                            
-                    elif table_name == "avaliacoes":
-                        records = []
-                        for idx, row in df.iterrows():
-                            prof_email_val = str(row.get("professor_email", "")).strip().lower()
-                            prof_id = db.execute(text("SELECT id FROM professores WHERE LOWER(email) = :email"), {"email": prof_email_val}).scalar()
-                            if not prof_id:
-                                prof_id = db.execute(text("SELECT id FROM professores LIMIT 1")).scalar() or 1
-                                
-                            aluno_ra_val = str(row.get("aluno_ra", "")).strip()
-                            aluno_id = db.execute(text("SELECT id FROM alunos WHERE ra = :ra"), {"ra": aluno_ra_val}).scalar()
-                            if not aluno_id:
-                                aluno_id = db.execute(text("SELECT id FROM alunos LIMIT 1")).scalar() or 1
-                                
-                            dt_str = str(row["data_hora"]).strip()
-                            try:
-                                dt = datetime.strptime(dt_str, "%d/%m/%Y %H:%M:%S")
-                            except Exception:
-                                try:
-                                    dt = datetime.strptime(dt_str, "%Y-%m-%d %H:%M:%S")
-                                except Exception:
-                                    dt = datetime.now()
-                                    
-                            records.append({
-                                "id": int(row["id"]) if pd.notna(row["id"]) and str(row["id"]).replace(".0","").isdigit() else (idx + 1),
-                                "professor_id": prof_id,
-                                "aluno_id": aluno_id,
-                                "data_hora": dt.strftime("%Y-%m-%d %H:%M:%S"),
-                                "atitude_aa": row["criterios_aa"] if pd.notna(row["criterios_aa"]) and row["criterios_aa"] != "Nenhum" else None,
-                                "comportamento_cs": row["criterios_cs"] if pd.notna(row["criterios_cs"]) and row["criterios_cs"] != "Nenhum" else None,
-                                "desconto_aa": float(row.get("desconto_aa", 0.0) if pd.notna(row.get("desconto_aa")) else 0.0),
-                                "desconto_cs": float(row.get("desconto_cs", 0.0) if pd.notna(row.get("desconto_cs")) else 0.0),
-                                "observacoes": row["observacoes"] if pd.notna(row["observacoes"]) else ""
-                            })
-                        if records:
-                            pd.DataFrame(records).to_sql(name="avaliacoes", con=engine, if_exists="append", index=False)
-                            
-                    elif table_name == "feedbacks":
-                        records = []
-                        for idx, row in df.iterrows():
-                            dt_str = str(row["data_hora"]).strip()
-                            try:
-                                dt = datetime.strptime(dt_str, "%d/%m/%Y %H:%M:%S")
-                            except Exception:
-                                try:
-                                    dt = datetime.strptime(dt_str, "%Y-%m-%d %H:%M:%S")
-                                except Exception:
-                                    dt = datetime.now()
-                            records.append({
-                                "id": int(row["id"]) if pd.notna(row["id"]) and str(row["id"]).replace(".0","").isdigit() else (idx + 1),
-                                "nome": row["nome"] if pd.notna(row["nome"]) else "Anônimo",
-                                "tipo": row["tipo"] if pd.notna(row["tipo"]) else "Sugestão",
-                                "secao": row["secao"] if pd.notna(row["secao"]) else "Geral",
-                                "descricao": row["descricao"] if pd.notna(row["descricao"]) else "",
-                                "data_hora": dt.strftime("%Y-%m-%d %H:%M:%S"),
-                                "resolvido": 1 if str(row["resolvido"]).lower() in ["1", "true", "resolvido"] else 0
-                            })
-                        if records:
-                            pd.DataFrame(records).to_sql(name="feedbacks", con=engine, if_exists="append", index=False)
-                            
-                    elif table_name == "configuracoes":
-                        df[["id", "chave", "valor"]].to_sql(name="configuracoes", con=engine, if_exists="append", index=False)
-                        
-                else:
-                    # Planilha existe no Sheets mas está vazia.
-                    # Se o banco de dados local SQLite já possui registros, fazemos o PUSH deles para o Sheets.
-                    if local_count > 0:
-                        print(f"Planilha {sheet_name} vazia no Sheets, mas SQLite tem {local_count} registros. Gravando dados locais nela...")
-                        push_table_to_sheets(table_name)
-                    else:
-                        print(f"Aba {sheet_name} vazia e SQLite sem dados. Mantendo vazia.")
-                    
-            except Exception as e:
-                # Planilha não existe ou falhou a leitura.
-                # Se o banco SQLite tem dados, envia os dados locais e cria a aba no Sheets.
+            # Se a leitura falhou ou retornou DataFrame vazio:
+            if df is None or df.empty:
                 if local_count > 0:
-                    print(f"Aba {sheet_name} indisponível ({e}). Criando e enviando dados locais...")
+                    print(f"Aba {sheet_name} vazia ou indisponível. SQLite tem {local_count} registros. Fazendo backup para o Sheets...")
                     push_table_to_sheets(table_name)
                 else:
-                    print(f"Aba {sheet_name} indisponível e SQLite sem registros. Ignorando pull.")
+                    print(f"Aba {sheet_name} vazia e SQLite sem dados. Mantendo vazia.")
+                continue  # Vai para a próxima tabela sem deletar nada
+                
+            # Se a leitura teve sucesso e tem dados, fazemos a atualização no SQLite de forma atômica
+            try:
+                if table_name == "professores":
+                    # Prepara os dados antes de deletar
+                    for col in ["nome", "email", "viagem", "onibus"]:
+                        if col not in df.columns:
+                            df[col] = None
+                    df["id"] = range(1, len(df) + 1)
+                    
+                    # Deleta e insere
+                    db.execute(text("DELETE FROM professores"))
+                    df[["id", "nome", "email", "viagem", "onibus"]].to_sql(name="professores", con=engine, if_exists="append", index=False)
+                    
+                elif table_name == "alunos":
+                    for col in ["ra", "nome", "ano", "viagem_destino", "onibus"]:
+                        if col not in df.columns:
+                            df[col] = None
+                    df["id"] = range(1, len(df) + 1)
+                    if "email" not in df.columns:
+                        df["email"] = df["ra"].astype(str) + "@aluno.cmc.com.br"
+                    else:
+                        df["email"] = df["email"].fillna(df["ra"].astype(str) + "@aluno.cmc.com.br")
+                        
+                    db.execute(text("DELETE FROM alunos"))
+                    df[["id", "nome", "ra", "email", "ano", "viagem_destino", "onibus"]].to_sql(name="alunos", con=engine, if_exists="append", index=False)
+                    
+                elif table_name == "criterios_rubrica":
+                    unique_rubricas = df["rubrica"].unique()
+                    rubrica_ids = {}
+                    
+                    # Prepara inserções de rubricas e critérios na memória
+                    rubricas_to_insert = []
+                    for name in unique_rubricas:
+                        if not name or pd.isna(name):
+                            continue
+                        max_aa, max_cs = 1.0, 1.0
+                        termos = ""
+                        name_clean = str(name).strip().lower()
+                        if "3" in name_clean:
+                            max_aa, max_cs = 0.4, 1.6
+                            termos = "3ª SÉRIE; 3ª SERIE; 3 SÉRIE; 3 SERIE; 3EM; 3º EM; 3ºEM; 3 ANO; 3º ANO"
+                        elif "2" in name_clean:
+                            max_aa, max_cs = 1.0, 1.0
+                            termos = "2ª SÉRIE; 2ª SERIE; 2 SÉRIE; 2 SERIE; 2EM; 2º EM; 2ºEM"
+                        rubricas_to_insert.append((str(name).strip(), max_aa, max_cs, termos))
+                    
+                    # Deleta e insere
+                    db.execute(text("DELETE FROM criterios_rubrica"))
+                    db.execute(text("DELETE FROM rubricas"))
+                    
+                    for rname, max_aa, max_cs, termos in rubricas_to_insert:
+                        db.execute(text("INSERT INTO rubricas (nome, max_aa, max_cs, termos_mapeamento) VALUES (:nome, :max_aa, :max_cs, :termos)"),
+                                   {"nome": rname, "max_aa": max_aa, "max_cs": max_cs, "termos": termos})
+                        r_id = db.execute(text("SELECT last_insert_rowid()")).scalar()
+                        rubrica_ids[rname.lower()] = r_id
+                        
+                    criteria_data = []
+                    for idx, row in df.iterrows():
+                        rub_name = row["rubrica"]
+                        if not rub_name or pd.isna(rub_name):
+                            continue
+                        rid = rubrica_ids.get(str(rub_name).strip().lower())
+                        if not rid:
+                            continue
+                        criteria_data.append({
+                            "id": idx + 1,
+                            "rubrica_id": rid,
+                            "tipo": str(row["tipo"]).strip().upper(),
+                            "descricao": str(row["descricao"]).strip(),
+                            "desconto_padrao": float(row.get("desconto_moderado", 0.3) if pd.notna(row.get("desconto_moderado")) else 0.3),
+                            "desconto_leve": float(row.get("desconto_leve", 0.1) if pd.notna(row.get("desconto_leve")) else 0.1),
+                            "desconto_moderado": float(row.get("desconto_moderado", 0.3) if pd.notna(row.get("desconto_moderado")) else 0.3),
+                            "desconto_grave": float(row.get("desconto_grave", 0.5) if pd.notna(row.get("desconto_grave")) else 0.5)
+                        })
+                    if criteria_data:
+                        pd.DataFrame(criteria_data).to_sql(name="criterios_rubrica", con=engine, if_exists="append", index=False)
+                        
+                elif table_name == "avaliacoes":
+                    records = []
+                    for idx, row in df.iterrows():
+                        prof_email_val = str(row.get("professor_email", "")).strip().lower()
+                        prof_id = db.execute(text("SELECT id FROM professores WHERE LOWER(email) = :email"), {"email": prof_email_val}).scalar()
+                        if not prof_id:
+                            prof_id = db.execute(text("SELECT id FROM professores LIMIT 1")).scalar() or 1
+                            
+                        aluno_ra_val = str(row.get("aluno_ra", "")).strip()
+                        aluno_id = db.execute(text("SELECT id FROM alunos WHERE ra = :ra"), {"ra": aluno_ra_val}).scalar()
+                        if not aluno_id:
+                            aluno_id = db.execute(text("SELECT id FROM alunos LIMIT 1")).scalar() or 1
+                            
+                        dt_str = str(row["data_hora"]).strip()
+                        try:
+                            dt = datetime.strptime(dt_str, "%d/%m/%Y %H:%M:%S")
+                        except Exception:
+                            try:
+                                dt = datetime.strptime(dt_str, "%Y-%m-%d %H:%M:%S")
+                            except Exception:
+                                dt = datetime.now()
+                                
+                        records.append({
+                            "id": int(row["id"]) if pd.notna(row["id"]) and str(row["id"]).replace(".0","").isdigit() else (idx + 1),
+                            "professor_id": prof_id,
+                            "aluno_id": aluno_id,
+                            "data_hora": dt.strftime("%Y-%m-%d %H:%M:%S"),
+                            "atitude_aa": row["criterios_aa"] if pd.notna(row["criterios_aa"]) and row["criterios_aa"] != "Nenhum" else None,
+                            "comportamento_cs": row["criterios_cs"] if pd.notna(row["criterios_cs"]) and row["criterios_cs"] != "Nenhum" else None,
+                            "desconto_aa": float(row.get("desconto_aa", 0.0) if pd.notna(row.get("desconto_aa")) else 0.0),
+                            "desconto_cs": float(row.get("desconto_cs", 0.0) if pd.notna(row.get("desconto_cs")) else 0.0),
+                            "observacoes": row["observacoes"] if pd.notna(row["observacoes"]) else ""
+                        })
+                    
+                    db.execute(text("DELETE FROM avaliacoes"))
+                    if records:
+                        pd.DataFrame(records).to_sql(name="avaliacoes", con=engine, if_exists="append", index=False)
+                        
+                elif table_name == "feedbacks":
+                    records = []
+                    for idx, row in df.iterrows():
+                        dt_str = str(row["data_hora"]).strip()
+                        try:
+                            dt = datetime.strptime(dt_str, "%d/%m/%Y %H:%M:%S")
+                        except Exception:
+                            try:
+                                dt = datetime.strptime(dt_str, "%Y-%m-%d %H:%M:%S")
+                            except Exception:
+                                dt = datetime.now()
+                        records.append({
+                            "id": int(row["id"]) if pd.notna(row["id"]) and str(row["id"]).replace(".0","").isdigit() else (idx + 1),
+                            "nome": row["nome"] if pd.notna(row["nome"]) else "Anônimo",
+                            "tipo": row["tipo"] if pd.notna(row["tipo"]) else "Sugestão",
+                            "secao": row["secao"] if pd.notna(row["secao"]) else "Geral",
+                            "descricao": row["descricao"] if pd.notna(row["descricao"]) else "",
+                            "data_hora": dt.strftime("%Y-%m-%d %H:%M:%S"),
+                            "resolvido": 1 if str(row["resolvido"]).lower() in ["1", "true", "resolvido"] else 0
+                        })
+                    
+                    db.execute(text("DELETE FROM feedbacks"))
+                    if records:
+                        pd.DataFrame(records).to_sql(name="feedbacks", con=engine, if_exists="append", index=False)
+                        
+                elif table_name == "configuracoes":
+                    db.execute(text("DELETE FROM configuracoes"))
+                    df[["id", "chave", "valor"]].to_sql(name="configuracoes", con=engine, if_exists="append", index=False)
+                    
+            except Exception as insert_err:
+                print(f"Erro ao inserir dados da tabela {table_name} no SQLite: {insert_err}")
+                raise insert_err  # Dispara para o bloco principal de rollback
                 
         db.commit()
         print("=== PULL CONCLUÍDO COM SUCESSO ===")
     except Exception as e:
         db.rollback()
-        print(f"Erro no pull geral: {e}")
+        print(f"Erro no pull geral (dados locais preservados): {e}")
+        raise e
     finally:
         db.close()
 
